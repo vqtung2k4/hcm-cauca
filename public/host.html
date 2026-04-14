@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Màn hình Host - Leaderboard</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a2a3a; color: white; text-align: center; margin: 0; padding: 20px; }
+        .screen { display: none; }
+        .active { display: block; }
+        
+        /* Leaderboard Style */
+        #leaderboard-table { width: 80%; margin: 30px auto; border-collapse: collapse; background: rgba(255,255,255,0.1); border-radius: 15px; overflow: hidden; }
+        th, td { padding: 20px; font-size: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        th { background: #2196F3; }
+        .rank-1 { color: #FFD700; font-size: 32px; font-weight: bold; } /* Vàng */
+        .rank-2 { color: #C0C0C0; } /* Bạc */
+        .rank-3 { color: #CD7F32; } /* Đồng */
+
+        #timer-display { font-size: 48px; color: #F44336; margin: 20px; font-weight: bold; }
+        .room-info { font-size: 20px; background: #333; padding: 10px; border-radius: 10px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <!-- BƯỚC 1: CÀI ĐẶT -->
+    <div id="host-setup" class="screen active">
+        <h1>🎏 THIẾT LẬP PHÒNG CÂU CÁ</h1>
+        <button onclick="createRoom(10)" style="padding:20px; font-size:20px; cursor:pointer">Trận đấu 10 Phút</button>
+        <button onclick="createRoom(15)" style="padding:20px; font-size:20px; cursor:pointer">Trận đấu 15 Phút</button>
+    </div>
+
+    <!-- BƯỚC 2: PHÒNG CHỜ (LOBBY) -->
+    <div id="host-lobby" class="screen">
+        <h1>Mã Phòng: <span id="room-display" style="color:#2196F3; background:white; padding:0 10px; border-radius:5px">------</span></h1>
+        <div id="player-count" style="font-size:24px; margin:20px">Ngư thủ đã vào: 0</div>
+        <div id="player-list" style="font-size:18px; color:#aaa; margin-bottom:30px">Đang đợi mọi người kết nối...</div>
+        <button onclick="sendStartGame()" style="padding:15px 40px; font-size:24px; background:#4CAF50; color:white; border:none; border-radius:10px; cursor:pointer">BẮT ĐẦU NGAY</button>
+    </div>
+
+    <!-- BƯỚC 3: TRẬN ĐẤU & LEADERBOARD -->
+    <div id="host-game" class="screen">
+        <div class="room-info">Phòng: <span id="game-room-code">---</span></div>
+        <div id="timer-display">10:00</div>
+        
+        <h2>🏆 BẢNG XẾP HẠNG NGƯ THỦ 🏆</h2>
+        <table id="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Hạng</th>
+                    <th>Ngư thủ</th>
+                    <th>Điểm số</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <!-- Dữ liệu sẽ nhảy vào đây -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let myRoomCode = "";
+        let timeLeft = 0;
+        let timerInterval;
+
+        // 1. Tạo phòng
+        function createRoom(duration) {
+            socket.emit('createRoom', { duration: duration });
+        }
+
+        socket.on('roomCreated', (data) => {
+            myRoomCode = data.roomCode;
+            timeLeft = data.duration * 60; // Chuyển sang giây
+            document.getElementById('room-display').innerText = myRoomCode;
+            document.getElementById('game-room-code').innerText = myRoomCode;
+            showScreen('host-lobby');
+        });
+
+        // 2. Cập nhật danh sách người chơi trong phòng chờ
+        socket.on('updatePlayerList', (players) => {
+            document.getElementById('player-count').innerText = "Ngư thủ đã vào: " + players.length;
+            document.getElementById('player-list').innerText = players.map(p => p.name).join(', ');
+        });
+
+        // 3. Lệnh bắt đầu
+        function sendStartGame() {
+            socket.emit('startGame', myRoomCode);
+            showScreen('host-game'); // Ẩn lobby, hiện bảng xếp hạng
+            startCountdown();
+        }
+
+        // 4. Cập nhật bảng xếp hạng thời gian thực
+        socket.on('updateLeaderboard', (leaderboard) => {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = leaderboard.map((p, i) => `
+                <tr class="rank-${i+1}">
+                    <td>${i+1}</td>
+                    <td>${p.name}</td>
+                    <td>${p.score.toLocaleString()} đ</td>
+                </tr>
+            `).join('');
+        });
+
+        // 5. Đồng hồ đếm ngược
+        function startCountdown() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                let mins = Math.floor(timeLeft / 60);
+                let secs = timeLeft % 60;
+                document.getElementById('timer-display').innerText = 
+                    `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert("HẾT GIỜ! CHÚC MỪNG CÁC NGƯ THỦ XUẤT SẮC NHẤT!");
+                }
+            }, 1000);
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HCM Fishing - Ôn tập Tư tưởng Hồ Chí Minh</title>
+    <style>
+        :root {
+            --blue: #2196F3;
+            --green: #4CAF50;
+            --yellow: #FFC107;
+            --red: #F44336;
+            --dark: #1a2a3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            background: var(--dark);
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        /* UI Elements */
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background: var(--blue);
+            color: white;
+            margin: 10px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        input {
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        /* Game Area */
+        #pond {
+            width: 100%;
+            height: 60vh;
+            background: linear-gradient(#4fc3f7, #0288d1);
+            position: relative;
+            border-bottom: 5px solid #01579b;
+        }
+
+        .fish {
+            position: absolute;
+            font-size: 40px;
+            transition: 2s;
+        }
+
+        /* Tension Bar */
+        #bar-container {
+            width: 300px;
+            height: 30px;
+            background: #ddd;
+            border-radius: 15px;
+            position: relative;
+            margin: 20px;
+            overflow: hidden;
+            display: none;
+        }
+
+        #indicator {
+            width: 10px;
+            height: 100%;
+            background: black;
+            position: absolute;
+            left: 0;
+            transition: 0.05s;
+        }
+
+        .zone-red {
+            background: var(--red);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+
+        .zone-yellow {
+            background: var(--yellow);
+            width: 40%;
+            height: 100%;
+            position: absolute;
+            left: 30%;
+        }
+
+        .zone-green {
+            background: var(--green);
+            width: 15%;
+            height: 100%;
+            position: absolute;
+            left: 42.5%;
+        }
+
+        /* Question Box */
+        #question-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 500px;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .answer-btn {
+            width: 100%;
+            background: #eee;
+            color: #333;
+            text-align: left;
+            margin: 5px 0;
+        }
+
+        #timer-bar {
+            height: 5px;
+            background: var(--red);
+            width: 100%;
+            margin-bottom: 15px;
+            transition: linear;
+        }
+
+        /* Leaderboard */
+        #leaderboard {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .combo-badge {
+            color: var(--yellow);
+            font-weight: bold;
+            animation: blink 0.5s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        #waiting-player-list {
+            font-size: 18px;
+            line-height: 1.8;
+        }
+
+        .loader {
+            font-size: 30px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+    <!-- Màn hình Menu -->
+    <div id="screen-menu" class="screen active">
+        <h1>🎏 HCM FISHING MULTIPLAYER</h1>
+        <button onclick="showScreen('screen-join')">Chơi Game</button>
+        <button onclick="startSolo()">Ôn Tập (Solo)</button>
+    </div>
+
+    <!-- Màn hình Nhập tên -->
+    <div id="screen-join" class="screen">
+        <h2>Nhập tên ngư thủ</h2>
+        <input type="text" id="player-name" placeholder="Tên của bạn...">
+        <input type="text" id="room-code" placeholder="Mã phòng (6 số)...">
+        <button onclick="startGame()">Vào Hồ Câu</button>
+    </div>
+
+    <!-- Màn hình Phòng chờ (Waiting Room) -->
+    <div id="screen-waiting-player" class="screen">
+        <h1 style="color: var(--yellow);">🎮 PHÒNG CHỜ</h1>
+        <div
+            style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 2px dashed var(--blue);">
+            <h2 style="margin: 0;">Mã phòng của bạn: <span id="waiting-room-code"
+                    style="color: var(--blue); letter-spacing: 5px;">------</span></h2>
+        </div>
+
+        <div id="player-list-container"
+            style="width: 350px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #444;">
+            <h4 style="margin-top: 0; border-bottom: 1px solid #555; padding-bottom: 5px; color: var(--green);">Ngư thủ
+                đã sẵn sàng:</h4>
+            <div id="waiting-player-list"
+                style="max-height: 200px; overflow-y: auto; text-align: left; padding-left: 10px;">
+                Đang đợi danh sách...
+            </div>
+        </div>
+
+        <p style="margin-top: 20px; font-style: italic; color: #aaa;">Vui lòng đợi chủ phòng nhấn nút "Bắt đầu"...</p>
+        <div class="loader">⌛</div>
+    </div>
+
+    <!-- Màn hình Game -->
+    <div id="screen-game" class="screen">
+        <div id="pond">
+            <div id="stat-overlay" style="position: absolute; left: 20px; top: 20px; text-align: left;">
+                <div>Ngư thủ: <span id="display-name">---</span></div>
+                <div>Điểm: <span id="score">0</span></div>
+            </div>
+            <div id="leaderboard">
+                <h4>Leaderboard</h4>
+                <div id="rankings">1. Đang tải...</div>
+            </div>
+            <div id="msg" style="margin-top: 20vh; font-size: 24px;">Nhấn "Quăng Cần" để bắt đầu!</div>
+        </div>
+
+        <div id="bar-container">
+            <div class="zone-red"></div>
+            <div class="zone-yellow"></div>
+            <div class="zone-green"></div>
+            <div id="indicator"></div>
+        </div>
+
+        <button id="btn-cast" onclick="castRod()">🎣 Quăng Cần</button>
+    </div>
+
+    <!-- Modal Câu hỏi -->
+    <div id="question-modal">
+        <div id="timer-bar"></div>
+        <div id="combo-status"></div>
+        <h3 id="q-text">Câu hỏi ở đây?</h3>
+        <div id="q-answers"></div>
+    </div>
+
+    <script>
+        // Dữ liệu câu hỏi
+        const questions = [
+            { q: "Nguyễn Tất Thành ra đi tìm đường cứu nước vào ngày nào?", a: ["05/06/1911", "19/05/1890", "03/02/1930", "02/09/1945"], correct: 0, difficulty: 100 },
+            { q: "Bác Hồ ví đức tính nào như 'Bốn mùa của trời'?", a: ["Cần, Kiệm, Liêm, Chính", "Nhân, Nghĩa, Lễ, Trí", "Đức, Tài, Tâm, Tầm", "Tự tin, Tự trọng"], correct: 0, difficulty: 150 },
+            { q: "Tác phẩm nào của Bác xuất bản năm 1927 nhằm đào tạo cán bộ?", a: ["Bản án chế độ thực dân Pháp", "Đường Cách Mệnh", "Tuyên ngôn độc lập", "Lời kêu gọi toàn quốc kháng chiến"], correct: 1, difficulty: 120 },
+            { q: "Tên gọi của Bác khi làm việc trên tàu Latouche-Tréville?", a: ["Văn Ba", "Nguyễn Ái Quốc", "Hồ Chí Minh", "Thầu Chín"], correct: 0, difficulty: 100 },
+            { q: "Đại hội nào của Đảng nêu định nghĩa đầy đủ về Tư tưởng HCM?", a: ["Đại hội VI", "Đại hội IX", "Đại hội XI", "Đại hội XII"], correct: 2, difficulty: 200 }
+        ];
+
+        let score = 0;
+        let isFishing = false;
+        let barDirection = 1;
+        let barPos = 0;
+        let barInterval;
+        let currentCombo = 0;
+        let comboTarget = 0;
+        let currentRoom = "";
+        let questionStartTime;
+        let currentQ;
+
+        const socket = io(); // Kết nối tới server
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(id);
+            if (target) target.classList.add('active');
+        }
+
+        // Sửa lỗi đặt tên hàm từ joinRoom thành startGame để khớp với HTML
+        function startGame() {
+            const playerName = document.getElementById('player-name').value;
+            const roomCode = document.getElementById('room-code').value;
+            if (!playerName || !roomCode) return alert("Nhập đủ tên và mã!");
+
+            socket.emit('joinRoom', { roomCode, playerName });
+            document.getElementById('display-name').innerText = playerName;
+        }
+
+        socket.on('joinSuccess', (data) => {
+            currentRoom = data.roomCode;
+            document.getElementById('waiting-room-code').innerText = currentRoom; // Hiển thị mã phòng
+            showScreen('screen-waiting-player'); // Chuyển sang màn hình chờ
+        });
+
+        socket.on('updatePlayerList', (players) => {
+            const listDiv = document.getElementById('waiting-player-list');
+            // Hiển thị danh sách dấu chấm đầu dòng cho chuyên nghiệp
+            listDiv.innerHTML = players.map(p => `• <b>${p.name}</b> <span style="font-size:12px; color:var(--green)">- Đã sẵn sàng</span>`).join('<br>');
+        });
+
+        socket.on('gameStarted', () => {
+            document.getElementById('msg').innerText = "TRẬN ĐẤU BẮT ĐẦU! QUĂNG CẦN THÔI!";
+            showScreen('screen-game'); // Chuyển từ màn hình chờ sang màn hình hồ câu
+            document.getElementById('btn-cast').style.display = 'block';
+        });
+
+        socket.on('errorMsg', (msg) => alert(msg));
+
+        function castRod() {
+            if (isFishing) return;
+            isFishing = true;
+            document.getElementById('btn-cast').style.display = 'none';
+            document.getElementById('msg').innerText = "Đang đợi cá cắn câu...";
+            setTimeout(() => { startTensionBar(); }, 2000 + Math.random() * 3000);
+        }
+
+        function startTensionBar() {
+            document.getElementById('msg').innerText = "CÁ CẮN! NHẤN ĐÚNG VẠCH XANH!";
+            document.getElementById('bar-container').style.display = 'block';
+            barPos = 0;
+            barInterval = setInterval(() => {
+                barPos += 2 * barDirection;
+                if (barPos > 95 || barPos < 0) barDirection *= -1;
+                document.getElementById('indicator').style.left = barPos + '%';
+            }, 20);
+
+            window.onclick = function (e) {
+                if (e.target.id === 'btn-cast' || e.target.classList.contains('answer-btn')) return;
+                checkCatch();
+            };
+        }
+
+        function checkCatch() {
+            clearInterval(barInterval);
+            document.getElementById('bar-container').style.display = 'none';
+            window.onclick = null;
+
+            if (barPos >= 42.5 && barPos <= 57.5) {
+                triggerQuestion(1.5);
+            } else if (barPos >= 30 && barPos <= 70) {
+                triggerQuestion(1.0);
+            } else {
+                document.getElementById('msg').innerText = "Hụt rồi! Thử lại nhé.";
+                resetGame();
+            }
+        }
+
+        function triggerQuestion(multiplier) {
+            if (currentCombo === 0 && Math.random() < 0.2) {
+                comboTarget = 3;
+                document.getElementById('combo-status').innerHTML = "<span class='combo-badge'>🚨 ĐÀN CÁ XUẤT HIỆN! (X3 CÂU)</span>";
+            }
+
+            currentQ = questions[Math.floor(Math.random() * questions.length)];
+            document.getElementById('q-text').innerText = currentQ.q;
+            const answersDiv = document.getElementById('q-answers');
+            answersDiv.innerHTML = '';
+
+            currentQ.a.forEach((ans, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.innerText = ans;
+                btn.onclick = () => submitAnswer(idx, multiplier);
+                answersDiv.appendChild(btn);
+            });
+
+            document.getElementById('question-modal').style.display = 'block';
+            questionStartTime = Date.now();
+
+            const timerBar = document.getElementById('timer-bar');
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            setTimeout(() => {
+                timerBar.style.transition = '15s linear';
+                timerBar.style.width = '0%';
+            }, 50);
+        }
+
+        function submitAnswer(idx, multiplier) {
+            document.getElementById('question-modal').style.display = 'none';
+            const timeTaken = (Date.now() - questionStartTime) / 1000;
+
+            if (idx === currentQ.correct) {
+                let timeBonus = Math.max(0, (15 - timeTaken) / 15);
+                let pointsEarned = Math.round(currentQ.difficulty * timeBonus * multiplier);
+
+                score += pointsEarned;
+                document.getElementById('score').innerText = score;
+                document.getElementById('msg').innerText = `+${pointsEarned} điểm!`;
+
+                // QUAN TRỌNG: Gửi điểm lên server cho Multiplayer
+                socket.emit('submitScore', { roomCode: currentRoom, points: pointsEarned });
+
+                if (comboTarget > 0) {
+                    currentCombo++;
+                    if (currentCombo < comboTarget) {
+                        setTimeout(() => triggerQuestion(multiplier), 800);
+                        return;
+                    } else {
+                        socket.emit('submitScore', { roomCode: currentRoom, points: 500 });
+                        score += 500;
+                        document.getElementById('score').innerText = score;
+                        document.getElementById('msg').innerText = "COMBO HOÀN THÀNH! +500đ";
+                        currentCombo = 0; comboTarget = 0;
+                        document.getElementById('combo-status').innerHTML = "";
+                    }
+                }
+            } else {
+                document.getElementById('msg').innerText = "Sai rồi! Cá chạy mất.";
+                currentCombo = 0; comboTarget = 0;
+                document.getElementById('combo-status').innerHTML = "";
+            }
+            resetGame();
+        }
+
+        function resetGame() {
+            isFishing = false;
+            document.getElementById('btn-cast').style.display = 'block';
+        }
+
+        // Lắng nghe bảng xếp hạng thật từ Server
+        socket.on('updateLeaderboard', (leaderboard) => {
+            const rankDiv = document.getElementById('rankings');
+            rankDiv.innerHTML = leaderboard.map((p, i) => `${i + 1}. ${p.name}: ${p.score}đ`).join('<br>');
+        });
+    </script>
+</body>
+
+</html>
