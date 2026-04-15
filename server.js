@@ -29,6 +29,7 @@ io.on('connection', (socket) => {
     });
 
     // 2. Người chơi tham gia phòng
+    // Người chơi tham gia phòng
     socket.on('joinRoom', (data) => {
         const { roomCode, playerName } = data;
         if (rooms[roomCode]) {
@@ -37,9 +38,22 @@ io.on('connection', (socket) => {
                 name: playerName,
                 score: 0
             };
-            // Thông báo cho tất cả mọi người trong phòng
+
+            // GỬI THÊM TRẠNG THÁI PHÒNG (status: 'waiting' hoặc 'playing')
+            socket.emit('joinSuccess', { 
+                roomCode, 
+                status: rooms[roomCode].status 
+            });
+
+            // Thông báo cập nhật danh sách cho mọi người
             io.to(roomCode).emit('updatePlayerList', Object.values(rooms[roomCode].players));
-            socket.emit('joinSuccess', { roomCode });
+            
+            // Nếu game đang chơi, gửi bảng xếp hạng hiện tại cho người mới vào luôn
+            if(rooms[roomCode].status === 'playing') {
+                const leaderboard = Object.values(rooms[roomCode].players)
+                    .sort((a, b) => b.score - a.score);
+                socket.emit('updateLeaderboard', leaderboard);
+            }
         } else {
             socket.emit('errorMsg', 'Phòng không tồn tại!');
         }

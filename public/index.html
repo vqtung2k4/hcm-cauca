@@ -346,8 +346,17 @@
 
         socket.on('joinSuccess', (data) => {
             currentRoom = data.roomCode;
-            document.getElementById('waiting-room-code').innerText = currentRoom; // Hiển thị mã phòng
-            showScreen('screen-waiting-player'); // Chuyển sang màn hình chờ
+            
+            // KIỂM TRA: Nếu phòng đang chơi thì vào thẳng màn hình game
+            if (data.status === 'playing') {
+                document.getElementById('msg').innerText = "TRẬN ĐẤU ĐANG DIỄN RA! VÀO CUỘC NGAY!";
+                showScreen('screen-game'); 
+                document.getElementById('btn-cast').style.display = 'block';
+            } else {
+                // Nếu phòng đang chờ thì vào màn hình chờ như cũ
+                document.getElementById('waiting-room-code').innerText = currentRoom;
+                showScreen('screen-waiting-player');
+            }
         });
 
         socket.on('updatePlayerList', (players) => {
