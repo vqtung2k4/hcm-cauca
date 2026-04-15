@@ -32,33 +32,42 @@ io.on('connection', (socket) => {
     // Người chơi tham gia phòng
     socket.on('joinRoom', (data) => {
         const { roomCode, playerName } = data;
-        if (rooms[roomCode]) {
+        const room = rooms[roomCode];
+
+        if (room) {
+            // 1. KIỂM TRA TRÙNG TÊN (Không phân biệt hoa thường và bỏ khoảng trắng thừa)
+            const isNameTaken = Object.values(room.players).some(
+                p => p.name.trim().toLowerCase() === playerName.trim().toLowerCase()
+            );
+
+            if (isNameTaken) {
+                // Gửi lỗi về nếu tên đã tồn tại trong phòng này
+                socket.emit('errorMsg', 'Tên này đã có người sử dụng trong phòng! Vui lòng chọn tên khác.');
+                return; // Dừng xử lý, không cho vào phòng
+            }
+
+            // 2. Nếu tên hợp lệ, tiến hành cho vào phòng
             socket.join(roomCode);
-            rooms[roomCode].players[socket.id] = {
-                name: playerName,
+            room.players[socket.id] = {
+                name: playerName.trim(),
                 score: 0
             };
 
-            // GỬI THÊM TRẠNG THÁI PHÒNG (status: 'waiting' hoặc 'playing')
             socket.emit('joinSuccess', { 
                 roomCode, 
-                status: rooms[roomCode].status 
+                status: room.status 
             });
 
-            // Thông báo cập nhật danh sách cho mọi người
-            io.to(roomCode).emit('updatePlayerList', Object.values(rooms[roomCode].players));
+            io.to(roomCode).emit('updatePlayerList', Object.values(room.players));
             
-            // Nếu game đang chơi, gửi bảng xếp hạng hiện tại cho người mới vào luôn
-            if(rooms[roomCode].status === 'playing') {
-                const leaderboard = Object.values(rooms[roomCode].players)
-                    .sort((a, b) => b.score - a.score);
+            if(room.status === 'playing') {
+                const leaderboard = Object.values(room.players).sort((a, b) => b.score - a.score);
                 socket.emit('updateLeaderboard', leaderboard);
             }
         } else {
             socket.emit('errorMsg', 'Phòng không tồn tại!');
         }
     });
-
     // 3. Host bắt đầu game
     socket.on('startGame', (roomCode) => {
         if (rooms[roomCode]) {
