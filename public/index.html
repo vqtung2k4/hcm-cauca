@@ -297,6 +297,18 @@
         <button id="btn-cast" onclick="castRod()">🎣 Quăng Cần</button>
     </div>
 
+    <!-- Màn hình Kết thúc (Game Over) -->
+    <div id="screen-game-over" class="screen">
+        <h1 style="color: var(--red);">⌛ HẾT GIỜ!</h1>
+        <h2>KẾT QUẢ CHUNG CUỘC</h2>
+        <div id="final-rankings"
+            style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; width: 300px; font-size: 20px;">
+            <!-- Hiện bảng xếp hạng cuối cùng ở đây -->
+        </div>
+        <button onclick="location.reload()" style="background: var(--green); margin-top: 20px;">Về màn hình
+            chính</button>
+    </div>
+
     <!-- Modal Câu hỏi -->
     <div id="question-modal">
         <div id="timer-bar"></div>
@@ -346,15 +358,17 @@
 
         socket.on('joinSuccess', (data) => {
             currentRoom = data.roomCode;
-            
-            // KIỂM TRA: Nếu phòng đang chơi thì vào thẳng màn hình game
+
+            // RESET ĐIỂM VỀ 0 KHI VÀO PHÒNG MỚI
+            score = 0;
+            document.getElementById('score').innerText = "0";
+
+            document.getElementById('waiting-room-code').innerText = currentRoom;
+
             if (data.status === 'playing') {
-                document.getElementById('msg').innerText = "TRẬN ĐẤU ĐANG DIỄN RA! VÀO CUỘC NGAY!";
-                showScreen('screen-game'); 
+                showScreen('screen-game');
                 document.getElementById('btn-cast').style.display = 'block';
             } else {
-                // Nếu phòng đang chờ thì vào màn hình chờ như cũ
-                document.getElementById('waiting-room-code').innerText = currentRoom;
                 showScreen('screen-waiting-player');
             }
         });
@@ -369,6 +383,25 @@
             document.getElementById('msg').innerText = "TRẬN ĐẤU BẮT ĐẦU! QUĂNG CẦN THÔI!";
             showScreen('screen-game'); // Chuyển từ màn hình chờ sang màn hình hồ câu
             document.getElementById('btn-cast').style.display = 'block';
+        });
+
+        // Lắng nghe lệnh kết thúc từ server
+        socket.on('gameEnded', () => {
+           
+            
+            isFishing = false;
+            clearInterval(barInterval);
+            stopFishAnimation();
+
+            document.getElementById('question-modal').style.display = 'none';
+            document.getElementById('bar-container').style.display = 'none';
+
+            // Chuyển màn hình
+            showScreen('screen-game-over');
+
+            // Cập nhật bảng điểm cuối cùng
+            const currentRankings = document.getElementById('rankings').innerHTML;
+            document.getElementById('final-rankings').innerHTML = currentRankings;
         });
 
         socket.on('errorMsg', (msg) => alert(msg));

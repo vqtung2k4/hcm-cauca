@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <title>Màn hình Host - Leaderboard</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a2a3a; color: white; text-align: center; margin: 0; padding: 20px; }
-        .screen { display: none; }
-        .active { display: block; }
-        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a2a3a;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
         /* Cải tiến giao diện nhập liệu */
         .setup-container {
             background: rgba(255, 255, 255, 0.05);
@@ -17,6 +31,7 @@
             margin-top: 50px;
             border: 1px solid rgba(33, 150, 243, 0.3);
         }
+
         input[type="number"] {
             padding: 15px;
             font-size: 20px;
@@ -28,20 +43,70 @@
         }
 
         /* Leaderboard Style */
-        #leaderboard-table { width: 80%; margin: 30px auto; border-collapse: collapse; background: rgba(255,255,255,0.1); border-radius: 15px; overflow: hidden; }
-        th, td { padding: 20px; font-size: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        th { background: #2196F3; }
-        .rank-1 { color: #FFD700; font-size: 32px; font-weight: bold; }
-        .rank-2 { color: #C0C0C0; }
-        .rank-3 { color: #CD7F32; }
+        #leaderboard-table {
+            width: 80%;
+            margin: 30px auto;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+        }
 
-        #timer-display { font-size: 48px; color: #F44336; margin: 20px; font-weight: bold; }
-        .room-info { font-size: 20px; background: #333; padding: 10px; border-radius: 10px; display: inline-block; }
-        
-        button { padding: 15px 30px; border-radius: 10px; border: none; cursor: pointer; transition: 0.3s; }
-        button:hover { transform: scale(1.05); filter: brightness(1.2); }
+        th,
+        td {
+            padding: 20px;
+            font-size: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            background: #2196F3;
+        }
+
+        .rank-1 {
+            color: #FFD700;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .rank-2 {
+            color: #C0C0C0;
+        }
+
+        .rank-3 {
+            color: #CD7F32;
+        }
+
+        #timer-display {
+            font-size: 48px;
+            color: #F44336;
+            margin: 20px;
+            font-weight: bold;
+        }
+
+        .room-info {
+            font-size: 20px;
+            background: #333;
+            padding: 10px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        button {
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
     </style>
 </head>
+
 <body>
 
     <!-- BƯỚC 1: CÀI ĐẶT (Đã cập nhật phần nhập thời gian) -->
@@ -53,23 +118,26 @@
                 <input type="number" id="input-duration" value="10" min="1" max="60">
                 <span style="font-size: 24px;">Phút</span>
             </div>
-            <button onclick="handleCreateRoom()" style="font-size: 24px; background: #2196F3; color: white; width: 100%;">TẠO PHÒNG</button>
+            <button onclick="handleCreateRoom()"
+                style="font-size: 24px; background: #2196F3; color: white; width: 100%;">TẠO PHÒNG</button>
         </div>
     </div>
 
     <!-- BƯỚC 2: PHÒNG CHỜ (LOBBY) -->
     <div id="host-lobby" class="screen">
-        <h1>Mã Phòng: <span id="room-display" style="color:#2196F3; background:white; padding:0 10px; border-radius:5px">------</span></h1>
+        <h1>Mã Phòng: <span id="room-display"
+                style="color:#2196F3; background:white; padding:0 10px; border-radius:5px">------</span></h1>
         <div id="player-count" style="font-size:24px; margin:20px">Ngư thủ đã vào: 0</div>
         <div id="player-list" style="font-size:18px; color:#aaa; margin-bottom:30px">Đang đợi mọi người kết nối...</div>
-        <button onclick="sendStartGame()" style="padding:15px 40px; font-size:24px; background:#4CAF50; color:white;">BẮT ĐẦU NGAY</button>
+        <button onclick="sendStartGame()"
+            style="padding:15px 40px; font-size:24px; background:#4CAF50; color:white;">BẮT ĐẦU NGAY</button>
     </div>
 
     <!-- BƯỚC 3: TRẬN ĐẤU & LEADERBOARD -->
     <div id="host-game" class="screen">
         <div class="room-info">Phòng: <span id="game-room-code">---</span></div>
         <div id="timer-display">00:00</div>
-        
+
         <h2>🏆 BẢNG XẾP HẠNG NGƯ THỦ 🏆</h2>
         <table id="leaderboard-table">
             <thead>
@@ -110,7 +178,7 @@
 
         socket.on('roomCreated', (data) => {
             myRoomCode = data.roomCode;
-            timeLeft = data.duration * 60; 
+            timeLeft = data.duration * 60;
             document.getElementById('room-display').innerText = myRoomCode;
             document.getElementById('game-room-code').innerText = myRoomCode;
             showScreen('host-lobby');
@@ -130,8 +198,8 @@
         socket.on('updateLeaderboard', (leaderboard) => {
             const tbody = document.getElementById('leaderboard-body');
             tbody.innerHTML = leaderboard.map((p, i) => `
-                <tr class="rank-${i+1}">
-                    <td>${i+1}</td>
+                <tr class="rank-${i + 1}">
+                    <td>${i + 1}</td>
                     <td>${p.name}</td>
                     <td>${p.score.toLocaleString()} đ</td>
                 </tr>
@@ -139,11 +207,12 @@
         });
 
         function startCountdown() {
+            console.log("Bắt đầu đếm ngược cho phòng: " + myRoomCode);
             timerInterval = setInterval(() => {
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
                     document.getElementById('timer-display').innerText = "0:00";
-                    alert("HẾT GIỜ! CHÚC MỪNG CÁC NGƯ THỦ XUẤT SẮC NHẤT!");
+                    socket.emit('endGame', myRoomCode);
                     return;
                 }
                 timeLeft--;
@@ -160,4 +229,5 @@
         }
     </script>
 </body>
+
 </html>
