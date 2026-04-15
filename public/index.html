@@ -77,6 +77,39 @@
             transition: 2s;
         }
 
+        .fish-anim {
+            position: absolute;
+            font-size: 30px;
+            pointer-events: none;
+            /* Để không bị bấm nhầm vào cá khi đang chơi */
+            z-index: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        @keyframes swimRight {
+            from {
+                left: -50px;
+                transform: scaleX(1);
+            }
+
+            to {
+                left: 105%;
+                transform: scaleX(1);
+            }
+        }
+
+        @keyframes swimLeft {
+            from {
+                right: -50px;
+                transform: scaleX(-1);
+            }
+
+            to {
+                right: 105%;
+                transform: scaleX(-1);
+            }
+        }
+
         /* Tension Bar */
         #bar-container {
             width: 300px;
@@ -331,12 +364,53 @@
 
         socket.on('errorMsg', (msg) => alert(msg));
 
+        function startFishAnimation() {
+            const pond = document.getElementById('pond');
+            const fishTypes = ['🐟', '🐠', '🐡', '🐬'];
+
+            fishInterval = setInterval(() => {
+                const fish = document.createElement('div');
+                fish.className = 'fish-anim';
+                fish.innerText = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+
+                // Vị trí độ cao ngẫu nhiên
+                const topPos = 20 + Math.random() * 60;
+                fish.style.top = topPos + "%";
+
+                // Hướng bơi ngẫu nhiên
+                const side = Math.random() > 0.5 ? 'Right' : 'Left';
+                const duration = 3 + Math.random() * 4; // Tốc độ bơi 3-7 giây
+
+                fish.style.animation = `swim${side} ${duration}s linear forwards`;
+
+                pond.appendChild(fish);
+
+                // Tự xóa cá sau khi bơi xong để tránh nặng máy
+                setTimeout(() => { fish.remove(); }, duration * 1000);
+            }, 600); // Cứ 0.6 giây tạo 1 con cá mới
+        }
+
+        // Hàm xóa sạch cá khi bắt đầu vào pha căn lực hoặc reset
+        function stopFishAnimation() {
+            clearInterval(fishInterval);
+            // Xóa các con cá đang bơi dở để người chơi tập trung vào thanh lực
+            const floatingFish = document.querySelectorAll('.fish-anim');
+            floatingFish.forEach(f => f.style.opacity = "0");
+            setTimeout(() => {
+                floatingFish.forEach(f => f.remove());
+            }, 500);
+        }
+
         function castRod() {
             if (isFishing) return;
             isFishing = true;
             document.getElementById('btn-cast').style.display = 'none';
             document.getElementById('msg').innerText = "Đang đợi cá cắn câu...";
-            setTimeout(() => { startTensionBar(); }, 2000 + Math.random() * 3000);
+            startFishAnimation();
+            setTimeout(() => {
+                stopFishAnimation(); // Dừng hiệu ứng khi cá đã cắn câu
+                startTensionBar();
+            }, 2000 + Math.random() * 3000);
         }
 
         function startTensionBar() {
@@ -440,6 +514,7 @@
 
         function resetGame() {
             isFishing = false;
+            stopFishAnimation();
             document.getElementById('btn-cast').style.display = 'block';
         }
 
