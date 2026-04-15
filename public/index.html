@@ -71,6 +71,86 @@
             border-bottom: 5px solid #01579b;
         }
 
+        /* Style cho Cần câu */
+        #fishing-setup {
+            position: absolute;
+            bottom: 0;
+            right: 15%;
+            width: 100px;
+            height: 100px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #rod {
+            width: 6px;
+            height: 200px;
+            background: #5d4037;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: rotate(20deg);
+            /* Tư thế đứng chờ */
+            transition: transform 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        #fishing-line {
+            position: absolute;
+            top: -180px;
+            /* Đầu cần câu */
+            left: 50%;
+            width: 2px;
+            height: 0;
+            background: rgba(255, 255, 255, 0.5);
+            transition: all 0.5s ease-in;
+            transform-origin: top center;
+        }
+
+        #hook {
+            position: absolute;
+            bottom: -20px;
+            left: -10px;
+            font-size: 20px;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        /* Khi Quăng cần */
+        .rod-cast {
+            transform: rotate(-60deg) !important;
+        }
+
+        .line-extended {
+            height: 250px !important;
+            top: -50px !important;
+            /* Di chuyển điểm bắt đầu dây theo đầu cần */
+            left: -180px !important;
+            /* Bắn dây về phía trước */
+        }
+
+        .hook-visible {
+            opacity: 1 !important;
+        }
+
+        /* Hiệu ứng phao nhấp nhô khi chờ */
+        @keyframes bob {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(10px);
+            }
+        }
+
+        .bobbing {
+            animation: bob 1s infinite ease-in-out;
+        }
+
         .fish {
             position: absolute;
             font-size: 40px;
@@ -276,6 +356,14 @@
     <!-- Màn hình Game -->
     <div id="screen-game" class="screen">
         <div id="pond">
+            <div id="fishing-setup">
+                <div id="rod">
+                    <!-- Dây câu bây giờ là con của cần câu -->
+                    <div id="fishing-line">
+                        <div id="hook">🪝</div>
+                    </div>
+                </div>
+            </div>
             <div id="stat-overlay" style="position: absolute; left: 20px; top: 20px; text-align: left;">
                 <div>Ngư thủ: <span id="display-name">---</span></div>
                 <div>Điểm: <span id="score">0</span></div>
@@ -318,7 +406,7 @@
     </div>
 
     <script>
-       // Ngân hàng 50 câu hỏi Tư tưởng Hồ Chí Minh cập nhật từ giáo trình
+        // Ngân hàng 50 câu hỏi Tư tưởng Hồ Chí Minh cập nhật từ giáo trình
         const questions = [
             { q: "HỒ CHÍ MINH công tác tại viện nghiên cứu các vấn đề dân tộc và thuộc địa vào thời gian nào?", a: ["1923", "1932", "1934", "1936"], correct: 2, difficulty: 150 },
             { q: "Tư tưởng, văn hóa phương tây lấy tiêu chuẩn nào làm thước đo?", a: ["Cảm tính và khoa học", "Lý tính và khoa học", "Tư duy và sự phản biện", "Sự phản biện và lý tính"], correct: 1, difficulty: 140 },
@@ -432,8 +520,8 @@
 
         // Lắng nghe lệnh kết thúc từ server
         socket.on('gameEnded', () => {
-           
-            
+
+
             isFishing = false;
             clearInterval(barInterval);
             stopFishAnimation();
@@ -491,13 +579,34 @@
         function castRod() {
             if (isFishing) return;
             isFishing = true;
-            document.getElementById('btn-cast').style.display = 'none';
-            document.getElementById('msg').innerText = "Đang đợi cá cắn câu...";
-            startFishAnimation();
+
+            const rod = document.getElementById('rod');
+            const line = document.getElementById('fishing-line');
+            const hook = document.getElementById('hook');
+            const btn = document.getElementById('btn-cast');
+
+            // 1. Hiệu ứng quăng cần
+            btn.style.display = 'none';
+            rod.classList.add('rod-cast');
+
             setTimeout(() => {
-                stopFishAnimation(); // Dừng hiệu ứng khi cá đã cắn câu
+                line.classList.add('line-extended');
+                hook.classList.add('hook-visible');
+                line.classList.add('bobbing'); // Phao nhấp nhô trên nước
+                document.getElementById('msg').innerText = "Đang đợi cá cắn câu...";
+                startFishAnimation();
+            }, 300);
+
+            // 2. Chờ cá cắn câu
+            setTimeout(() => {
+                stopFishAnimation();
+                // Hiệu ứng giật cần nhẹ khi cá cắn
+                line.classList.remove('bobbing');
+                rod.style.transform = "rotate(-65deg)";
+                setTimeout(() => { rod.style.transform = "rotate(-60deg)"; }, 100);
+
                 startTensionBar();
-            }, 2000 + Math.random() * 3000);
+            }, 3000 + Math.random() * 3000);
         }
 
         function startTensionBar() {
@@ -602,9 +711,18 @@
         function resetGame() {
             isFishing = false;
             stopFishAnimation();
+
+            // Đưa cần và dây về trạng thái ban đầu
+            const rod = document.getElementById('rod');
+            const line = document.getElementById('fishing-line');
+            const hook = document.getElementById('hook');
+
+            rod.classList.remove('rod-cast');
+            line.classList.remove('line-extended', 'bobbing');
+            hook.classList.remove('hook-visible');
+
             document.getElementById('btn-cast').style.display = 'block';
         }
-
         // Lắng nghe bảng xếp hạng thật từ Server
         socket.on('updateLeaderboard', (leaderboard) => {
             const rankDiv = document.getElementById('rankings');
