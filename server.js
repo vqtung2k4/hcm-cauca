@@ -55,11 +55,13 @@ io.on('connection', (socket) => {
             };
         }
 
+        const currentPlayer = room.players[socket.id];
+
         socket.join(roomCode);
         socket.roomCode = roomCode; 
         socket.playerName = nameKey;
 
-        socket.emit('joinSuccess', { roomCode, status: room.status });
+        socket.emit('joinSuccess', { roomCode, status: room.status, savedScore: currentPlayer.score });
         broadcastLeaderboard(roomCode);
         io.to(roomCode).emit('updatePlayerList', getActivePlayers(roomCode));
     });

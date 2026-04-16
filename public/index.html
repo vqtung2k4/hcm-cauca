@@ -501,8 +501,8 @@
             currentRoom = data.roomCode;
 
             // RESET ĐIỂM VỀ 0 KHI VÀO PHÒNG MỚI
-            score = 0;
-            document.getElementById('score').innerText = "0";
+            score = data.savedScore || 0;
+            document.getElementById('score').innerText = score;
 
             document.getElementById('waiting-room-code').innerText = currentRoom;
 
