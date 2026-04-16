@@ -180,6 +180,50 @@
             }
         }
 
+        /* Tension Bar */
+        #bar-container {
+            width: 300px;
+            height: 30px;
+            background: #ddd;
+            border-radius: 15px;
+            position: relative;
+            margin: 20px;
+            overflow: hidden;
+            display: none;
+        }
+
+        #indicator {
+            width: 10px;
+            height: 100%;
+            background: black;
+            position: absolute;
+            left: 0;
+            transition: 0.05s;
+        }
+
+        .zone-red {
+            background: var(--red);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+
+        .zone-yellow {
+            background: var(--yellow);
+            width: 40%;
+            height: 100%;
+            position: absolute;
+            left: 30%;
+        }
+
+        .zone-green {
+            background: var(--green);
+            width: 15%;
+            height: 100%;
+            position: absolute;
+            left: 42.5%;
+        }
+
         /* Leaderboard & Modals */
         #leaderboard {
             position: absolute;
