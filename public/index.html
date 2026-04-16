@@ -1,732 +1,738 @@
-    <!DOCTYPE html>
-    <html lang="vi">
+<!DOCTYPE html>
+<html lang="vi">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>HCM Fishing - Ôn tập Tư tưởng Hồ Chí Minh</title>
-        <style>
-            :root {
-                --blue: #2196F3;
-                --green: #4CAF50;
-                --yellow: #FFC107;
-                --red: #F44336;
-                --dark: #1a2a3a;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HCM Fishing - Ôn tập Tư tưởng Hồ Chí Minh</title>
+    <style>
+        :root {
+            --blue: #2196F3;
+            --green: #4CAF50;
+            --yellow: #FFC107;
+            --red: #F44336;
+            --dark: #1a2a3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            background: var(--dark);
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        /* UI Elements */
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background: var(--blue);
+            color: white;
+            margin: 10px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        input {
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        /* Game Area */
+        #pond {
+            width: 100%;
+            height: 60vh;
+            background: linear-gradient(#4fc3f7, #0288d1);
+            position: relative;
+            border-bottom: 5px solid #01579b;
+        }
+
+        /* Style cho Cần câu */
+        #fishing-setup {
+            position: absolute;
+            bottom: 150px;
+            right: 10%;
+            width: 20px;
+            height: 20px;
+            z-index: 10;
+        }
+
+        #rod {
+            width: 6px;
+            height: 160px;
+            /* Thu ngắn cần một chút cho thanh thoát */
+            background: #5d4037;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            transform-origin: bottom center;
+            transform: rotate(15deg);
+            /* Tư thế đứng chờ thẳng hơn */
+            transition: transform 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        #fishing-line {
+            position: absolute;
+            top: 0;
+            left: 2px;
+            width: 1.5px;
+            height: 0;
+            background: rgba(255, 255, 255, 0.6);
+            transition: height 0.5s ease-out, transform 0.6s;
+            transform-origin: top center;
+            transform: rotate(-15deg);
+            /* Bù góc đứng chờ */
+        }
+
+        #hook {
+            position: absolute;
+            bottom: -15px;
+            left: -8px;
+            font-size: 18px;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        /* TRẠNG THÁI KHI QUĂNG CẦN - Quăng chéo lên trên */
+        .rod-cast {
+            transform: rotate(-40deg) !important;
+            /* Giảm độ chúi (từ -70 xuống -40) */
+        }
+
+        .rod-cast #fishing-line {
+            height: 80px !important;
+            /* Thu ngắn dây (từ 120 xuống 80) */
+            transform: rotate(40deg) !important;
+        }
+
+        .rod-cast #hook {
+            opacity: 1 !important;
+        }
+
+        .line-extended {
+            height: 250px !important;
+        }
+
+        .hook-visible {
+            opacity: 1 !important;
+        }
+
+        /* Hiệu ứng phao nhấp nhô khi chờ */
+        @keyframes bob {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(40deg);
             }
 
-            body {
-                font-family: 'Segoe UI', sans-serif;
-                margin: 0;
-                background: var(--dark);
-                color: white;
-                overflow: hidden;
+            50% {
+                transform: translateY(10px) rotate(40deg);
+            }
+        }
+
+        .bobbing {
+            animation: bob 1.5s infinite ease-in-out;
+        }
+
+        .fish {
+            position: absolute;
+            font-size: 40px;
+            transition: 2s;
+        }
+
+        .fish-anim {
+            position: absolute;
+            font-size: 30px;
+            pointer-events: none;
+            /* Để không bị bấm nhầm vào cá khi đang chơi */
+            z-index: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        @keyframes swimRight {
+            from {
+                left: -50px;
+                transform: scaleX(1);
             }
 
-            /* Screens */
-            .screen {
-                display: none;
-                height: 100vh;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
+            to {
+                left: 105%;
+                transform: scaleX(1);
+            }
+        }
+
+        @keyframes swimLeft {
+            from {
+                right: -50px;
+                transform: scaleX(-1);
             }
 
-            .active {
-                display: flex;
+            to {
+                right: 105%;
+                transform: scaleX(-1);
             }
+        }
 
-            /* UI Elements */
-            button {
-                padding: 15px 30px;
-                font-size: 18px;
-                cursor: pointer;
-                border: none;
-                border-radius: 8px;
-                background: var(--blue);
-                color: white;
-                margin: 10px;
-                transition: 0.3s;
-            }
+        /* Tension Bar */
+        #bar-container {
+            width: 300px;
+            height: 30px;
+            background: #ddd;
+            border-radius: 15px;
+            position: relative;
+            margin: 20px;
+            overflow: hidden;
+            display: none;
+        }
 
-            button:hover {
-                transform: scale(1.05);
-                filter: brightness(1.2);
-            }
+        #indicator {
+            width: 10px;
+            height: 100%;
+            background: black;
+            position: absolute;
+            left: 0;
+            transition: 0.05s;
+        }
 
-            input {
-                padding: 12px;
-                font-size: 18px;
-                border-radius: 8px;
-                border: none;
-                margin-bottom: 20px;
-            }
+        .zone-red {
+            background: var(--red);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
 
-            /* Game Area */
-            #pond {
-                width: 100%;
-                height: 60vh;
-                background: linear-gradient(#4fc3f7, #0288d1);
-                position: relative;
-                border-bottom: 5px solid #01579b;
-            }
+        .zone-yellow {
+            background: var(--yellow);
+            width: 40%;
+            height: 100%;
+            position: absolute;
+            left: 30%;
+        }
 
-            /* Style cho Cần câu */
-            #fishing-setup {
-                position: absolute;
-                bottom: 0;
-                right: 15%;
-                /* Vị trí người đứng câu */
-                width: 20px;
-                height: 20px;
-                z-index: 10;
-            }
+        .zone-green {
+            background: var(--green);
+            width: 15%;
+            height: 100%;
+            position: absolute;
+            left: 42.5%;
+        }
 
-            #rod {
-                width: 8px;
-                height: 220px;
-                background: #5d4037;
-                border-radius: 5px;
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                transform-origin: bottom center;
-                transform: rotate(25deg);
-                /* Tư thế đứng chờ */
-                transition: transform 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-            }
+        /* Question Box */
+        #question-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 500px;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
 
-            #fishing-line {
-                position: absolute;
-                top: 0;
-                left: 3px;
-                width: 2px;
-                height: 0;
-                background: rgba(255, 255, 255, 0.7);
-                transition: height 0.5s ease-out, transform 0.6s;
-                transform-origin: top center;
-                /* Phép toán quan trọng: xoay ngược lại góc của cần câu 
-                để dây luôn thẳng đứng (25deg thì xoay -25deg) */
-                transform: rotate(-25deg);
-            }
+        .answer-btn {
+            width: 100%;
+            background: #eee;
+            color: #333;
+            text-align: left;
+            margin: 5px 0;
+        }
 
-            #hook {
-                position: absolute;
-                bottom: -15px;
-                left: -10px;
-                font-size: 20px;
+        #timer-bar {
+            height: 5px;
+            background: var(--red);
+            width: 100%;
+            margin-bottom: 15px;
+            transition: linear;
+        }
+
+        /* Leaderboard */
+        #leaderboard {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .combo-badge {
+            color: var(--yellow);
+            font-weight: bold;
+            animation: blink 0.5s infinite;
+        }
+
+        @keyframes blink {
+            50% {
                 opacity: 0;
-                transition: 0.3s;
+            }
+        }
+
+        #waiting-player-list {
+            font-size: 18px;
+            line-height: 1.8;
+        }
+
+        .loader {
+            font-size: 30px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
             }
 
-            /* Khi Quăng cần */
-            .rod-cast {
-                transform: rotate(-55deg) !important;
+            100% {
+                transform: rotate(360deg);
             }
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
 
-            .rod-cast #fishing-line {
-                height: 280px !important;
-                transform: rotate(55deg) !important;
-            }
+<body>
 
-            .rod-cast #hook {
-                opacity: 1 !important;
-            }
+    <!-- Màn hình Menu -->
+    <div id="screen-menu" class="screen active">
+        <h1>🎏 HCM FISHING MULTIPLAYER</h1>
+        <button onclick="showScreen('screen-join')">Chơi Game</button>
+        <button onclick="startSolo()">Ôn Tập (Solo)</button>
+    </div>
 
-            .line-extended {
-                height: 250px !important;
-            }
+    <!-- Màn hình Nhập tên -->
+    <div id="screen-join" class="screen">
+        <h2>Nhập tên ngư thủ</h2>
+        <input type="text" id="player-name" placeholder="Tên của bạn...">
+        <input type="text" id="room-code" placeholder="Mã phòng (6 số)...">
+        <button onclick="startGame()">Vào Hồ Câu</button>
+    </div>
 
-            .hook-visible {
-                opacity: 1 !important;
-            }
-
-            /* Hiệu ứng phao nhấp nhô khi chờ */
-            @keyframes bob {
-                0%, 100% { transform: translateY(0) rotate(55deg); }
-                50% { transform: translateY(10px) rotate(55deg); }
-            }
-            .bobbing {
-                animation: bob 1.5s infinite ease-in-out;
-            }
-            .fish {
-                position: absolute;
-                font-size: 40px;
-                transition: 2s;
-            }
-
-            .fish-anim {
-                position: absolute;
-                font-size: 30px;
-                pointer-events: none;
-                /* Để không bị bấm nhầm vào cá khi đang chơi */
-                z-index: 1;
-                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-            }
-
-            @keyframes swimRight {
-                from {
-                    left: -50px;
-                    transform: scaleX(1);
-                }
-
-                to {
-                    left: 105%;
-                    transform: scaleX(1);
-                }
-            }
-
-            @keyframes swimLeft {
-                from {
-                    right: -50px;
-                    transform: scaleX(-1);
-                }
-
-                to {
-                    right: 105%;
-                    transform: scaleX(-1);
-                }
-            }
-
-            /* Tension Bar */
-            #bar-container {
-                width: 300px;
-                height: 30px;
-                background: #ddd;
-                border-radius: 15px;
-                position: relative;
-                margin: 20px;
-                overflow: hidden;
-                display: none;
-            }
-
-            #indicator {
-                width: 10px;
-                height: 100%;
-                background: black;
-                position: absolute;
-                left: 0;
-                transition: 0.05s;
-            }
-
-            .zone-red {
-                background: var(--red);
-                width: 100%;
-                height: 100%;
-                position: absolute;
-            }
-
-            .zone-yellow {
-                background: var(--yellow);
-                width: 40%;
-                height: 100%;
-                position: absolute;
-                left: 30%;
-            }
-
-            .zone-green {
-                background: var(--green);
-                width: 15%;
-                height: 100%;
-                position: absolute;
-                left: 42.5%;
-            }
-
-            /* Question Box */
-            #question-modal {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                color: #333;
-                padding: 30px;
-                border-radius: 15px;
-                width: 80%;
-                max-width: 500px;
-                display: none;
-                z-index: 100;
-                box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            }
-
-            .answer-btn {
-                width: 100%;
-                background: #eee;
-                color: #333;
-                text-align: left;
-                margin: 5px 0;
-            }
-
-            #timer-bar {
-                height: 5px;
-                background: var(--red);
-                width: 100%;
-                margin-bottom: 15px;
-                transition: linear;
-            }
-
-            /* Leaderboard */
-            #leaderboard {
-                width: 300px;
-                background: rgba(0, 0, 0, 0.7);
-                padding: 15px;
-                border-radius: 10px;
-                position: absolute;
-                top: 20px;
-                right: 20px;
-            }
-
-            .combo-badge {
-                color: var(--yellow);
-                font-weight: bold;
-                animation: blink 0.5s infinite;
-            }
-
-            @keyframes blink {
-                50% {
-                    opacity: 0;
-                }
-            }
-
-            #waiting-player-list {
-                font-size: 18px;
-                line-height: 1.8;
-            }
-
-            .loader {
-                font-size: 30px;
-                animation: spin 2s linear infinite;
-            }
-
-            @keyframes spin {
-                0% {
-                    transform: rotate(0deg);
-                }
-
-                100% {
-                    transform: rotate(360deg);
-                }
-            }
-        </style>
-        <script src="/socket.io/socket.io.js"></script>
-    </head>
-
-    <body>
-
-        <!-- Màn hình Menu -->
-        <div id="screen-menu" class="screen active">
-            <h1>🎏 HCM FISHING MULTIPLAYER</h1>
-            <button onclick="showScreen('screen-join')">Chơi Game</button>
-            <button onclick="startSolo()">Ôn Tập (Solo)</button>
+    <!-- Màn hình Phòng chờ (Waiting Room) -->
+    <div id="screen-waiting-player" class="screen">
+        <h1 style="color: var(--yellow);">🎮 PHÒNG CHỜ</h1>
+        <div
+            style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 2px dashed var(--blue);">
+            <h2 style="margin: 0;">Mã phòng của bạn: <span id="waiting-room-code"
+                    style="color: var(--blue); letter-spacing: 5px;">------</span></h2>
         </div>
 
-        <!-- Màn hình Nhập tên -->
-        <div id="screen-join" class="screen">
-            <h2>Nhập tên ngư thủ</h2>
-            <input type="text" id="player-name" placeholder="Tên của bạn...">
-            <input type="text" id="room-code" placeholder="Mã phòng (6 số)...">
-            <button onclick="startGame()">Vào Hồ Câu</button>
-        </div>
-
-        <!-- Màn hình Phòng chờ (Waiting Room) -->
-        <div id="screen-waiting-player" class="screen">
-            <h1 style="color: var(--yellow);">🎮 PHÒNG CHỜ</h1>
-            <div
-                style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 2px dashed var(--blue);">
-                <h2 style="margin: 0;">Mã phòng của bạn: <span id="waiting-room-code"
-                        style="color: var(--blue); letter-spacing: 5px;">------</span></h2>
+        <div id="player-list-container"
+            style="width: 350px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #444;">
+            <h4 style="margin-top: 0; border-bottom: 1px solid #555; padding-bottom: 5px; color: var(--green);">Ngư thủ
+                đã sẵn sàng:</h4>
+            <div id="waiting-player-list"
+                style="max-height: 200px; overflow-y: auto; text-align: left; padding-left: 10px;">
+                Đang đợi danh sách...
             </div>
-
-            <div id="player-list-container"
-                style="width: 350px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #444;">
-                <h4 style="margin-top: 0; border-bottom: 1px solid #555; padding-bottom: 5px; color: var(--green);">Ngư thủ
-                    đã sẵn sàng:</h4>
-                <div id="waiting-player-list"
-                    style="max-height: 200px; overflow-y: auto; text-align: left; padding-left: 10px;">
-                    Đang đợi danh sách...
-                </div>
-            </div>
-
-            <p style="margin-top: 20px; font-style: italic; color: #aaa;">Vui lòng đợi chủ phòng nhấn nút "Bắt đầu"...</p>
-            <div class="loader">⌛</div>
         </div>
 
-        <!-- Màn hình Game -->
-        <div id="screen-game" class="screen">
-            <div id="pond">
-                <div id="fishing-setup">
-                    <div id="rod">
-                        <!-- Dây câu bây giờ là con của cần câu -->
-                        <div id="fishing-line">
-                            <div id="hook">🪝</div>
-                        </div>
+        <p style="margin-top: 20px; font-style: italic; color: #aaa;">Vui lòng đợi chủ phòng nhấn nút "Bắt đầu"...</p>
+        <div class="loader">⌛</div>
+    </div>
+
+    <!-- Màn hình Game -->
+    <div id="screen-game" class="screen">
+        <div id="pond">
+            <div id="fishing-setup">
+                <div id="rod">
+                    <!-- Dây câu bây giờ là con của cần câu -->
+                    <div id="fishing-line">
+                        <div id="hook">🪝</div>
                     </div>
                 </div>
-                <div id="stat-overlay" style="position: absolute; left: 20px; top: 20px; text-align: left;">
-                    <div>Ngư thủ: <span id="display-name">---</span></div>
-                    <div>Điểm: <span id="score">0</span></div>
-                </div>
-                <div id="leaderboard">
-                    <h4>Leaderboard</h4>
-                    <div id="rankings">1. Đang tải...</div>
-                </div>
-                <div id="msg" style="margin-top: 20vh; font-size: 24px;">Nhấn "Quăng Cần" để bắt đầu!</div>
             </div>
-
-            <div id="bar-container">
-                <div class="zone-red"></div>
-                <div class="zone-yellow"></div>
-                <div class="zone-green"></div>
-                <div id="indicator"></div>
+            <div id="stat-overlay" style="position: absolute; left: 20px; top: 20px; text-align: left;">
+                <div>Ngư thủ: <span id="display-name">---</span></div>
+                <div>Điểm: <span id="score">0</span></div>
             </div>
-
-            <button id="btn-cast" onclick="castRod()">🎣 Quăng Cần</button>
+            <div id="leaderboard">
+                <h4>Leaderboard</h4>
+                <div id="rankings">1. Đang tải...</div>
+            </div>
+            <div id="msg" style="margin-top: 20vh; font-size: 24px;">Nhấn "Quăng Cần" để bắt đầu!</div>
         </div>
 
-        <!-- Màn hình Kết thúc (Game Over) -->
-        <div id="screen-game-over" class="screen">
-            <h1 style="color: var(--red);">⌛ HẾT GIỜ!</h1>
-            <h2>KẾT QUẢ CHUNG CUỘC</h2>
-            <div id="final-rankings"
-                style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; width: 300px; font-size: 20px;">
-                <!-- Hiện bảng xếp hạng cuối cùng ở đây -->
-            </div>
-            <button onclick="location.reload()" style="background: var(--green); margin-top: 20px;">Về màn hình
-                chính</button>
+        <div id="bar-container">
+            <div class="zone-red"></div>
+            <div class="zone-yellow"></div>
+            <div class="zone-green"></div>
+            <div id="indicator"></div>
         </div>
 
-        <!-- Modal Câu hỏi -->
-        <div id="question-modal">
-            <div id="timer-bar"></div>
-            <div id="combo-status"></div>
-            <h3 id="q-text">Câu hỏi ở đây?</h3>
-            <div id="q-answers"></div>
+        <button id="btn-cast" onclick="castRod()">🎣 Quăng Cần</button>
+    </div>
+
+    <!-- Màn hình Kết thúc (Game Over) -->
+    <div id="screen-game-over" class="screen">
+        <h1 style="color: var(--red);">⌛ HẾT GIỜ!</h1>
+        <h2>KẾT QUẢ CHUNG CUỘC</h2>
+        <div id="final-rankings"
+            style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; width: 300px; font-size: 20px;">
+            <!-- Hiện bảng xếp hạng cuối cùng ở đây -->
         </div>
+        <button onclick="location.reload()" style="background: var(--green); margin-top: 20px;">Về màn hình
+            chính</button>
+    </div>
 
-        <script>
-            // Ngân hàng 50 câu hỏi Tư tưởng Hồ Chí Minh cập nhật từ giáo trình
-            const questions = [
-                { q: "HỒ CHÍ MINH công tác tại viện nghiên cứu các vấn đề dân tộc và thuộc địa vào thời gian nào?", a: ["1923", "1932", "1934", "1936"], correct: 2, difficulty: 150 },
-                { q: "Tư tưởng, văn hóa phương tây lấy tiêu chuẩn nào làm thước đo?", a: ["Cảm tính và khoa học", "Lý tính và khoa học", "Tư duy và sự phản biện", "Sự phản biện và lý tính"], correct: 1, difficulty: 140 },
-                { q: "Mục đích chính để HỒ CHÍ MINH muốn ra nước ngoài năm 1911 là gì?", a: ["Xem họ làm thế nào để về giúp đồng bào", "Học cách làm giàu của phương Tây", "Tìm hiểu về nghệ thuật quân sự", "Đi du lịch vòng quanh thế giới"], correct: 0, difficulty: 100 },
-                { q: "Chọn phương án trả lời ĐÚNG NHẤT về nền tảng tư tưởng của Đảng:", a: ["Chủ nghĩa Mác - Lênin", "Tư tưởng Hồ Chí Minh", "Cùng với CN Mác-Lênin, TT Hồ Chí Minh là nền tảng, kim chỉ nam", "Chủ nghĩa Tam dân"], correct: 2, difficulty: 110 },
-                { q: "Theo Hồ Chí Minh, ưu điểm lớn nhất của chủ nghĩa Tam dân của Tôn Trung Sơn là gì?", a: ["Chống phong kiến", "Đấu tranh vì tự do, dân chủ", "Phù hợp với điều kiện thực tế nước ta", "Tự do, cơm áo, hòa bình"], correct: 2, difficulty: 130 },
-                { q: "Tư tưởng Hồ Chí Minh hình thành trên cơ sở nào?", a: ["Vận dụng và phát triển sáng tạo chủ nghĩa Mác- Lênin", "Tiếp thu toàn bộ chủ nghĩa Mác-Lênin", "Tiếp thu một bộ phận của chủ nghĩa Mác-Lênin", "Vận dụng hoàn toàn chủ nghĩa Mác - Lênin"], correct: 0, difficulty: 120 },
-                { q: "Tư tưởng Hồ Chí Minh về cách mạng Việt Nam được xem là gì?", a: ["Các quan điểm cụ thể", "Một nhóm các quan điểm", "Hệ thống các học thuyết", "Hệ thống các quan điểm toàn diện và sâu sắc"], correct: 3, difficulty: 130 },
-                { q: "Tìm phương án SAI về nội dung khái niệm TT HCM mà Đại hội IX nêu lên:", a: ["Bản chất cách mạng và khoa học", "Nguồn gốc tư tưởng, lý luận", "Nội dung tư tưởng", "Kết cấu tư tưởng"], correct: 3, difficulty: 150 },
-                { q: "Nguyên tắc nào cần quán triệt trong nghiên cứu TT Hồ Chí Minh?", a: ["Quan điểm kế thừa và phát triển", "Quan điểm kế thừa và toàn diện", "Quan điểm cách mạng và cụ thể", "Quan điểm cách mạng và nhân văn"], correct: 0, difficulty: 140 },
-                { q: "Nguyên tắc cơ bản trong nghiên cứu tư tướng Hồ Chí Minh là gì?", a: ["Thống nhất giữa lí luận và thực tiễn", "Thống nhất giữa tính đảng và tính thực tiễn", "Thống nhất giữa tính khoa học và lý luận", "Tất cả các phương án trên"], correct: 0, difficulty: 110 },
-                { q: "Hồ Chí Minh cho rằng giai cấp địa chủ ở Việt Nam như thế nào?", a: ["Là giai cấp phản động", "Là giai cấp tiên tiến", "Có thể phân hóa và lợi dụng một bộ phận", "Cần phải loại bỏ hoàn toàn lập tức"], correct: 2, difficulty: 160 },
-                { q: "Câu nói “Sông có thế cạn, núi có thể mòn, song chân lý đó không bao giờ thay đổi” ở tác phẩm nào?", a: ["Thư gửi đồng bào Nam Bộ (1946)", "Nam kỳ tự trị", "Bức thư gửi đồng chí Lê Duẩn", "Thành đồng tổ quốc"], correct: 0, difficulty: 120 },
-                { q: "Nội dung nào KHÔNG PHẢI là thực chất vấn đề dân tộc thuộc địa trong TT HCM?", a: ["Đấu tranh chống chủ nghĩa thực dân", "Lựa chọn con đường CNXH", "Đòi quyền tự do dân chủ tối thiểu", "Phụ thuộc vào sự giúp đỡ bên ngoài"], correct: 3, difficulty: 150 },
-                { q: "Đâu KHÔNG PHẢI là nguyên tắc xây dựng CNXH trong thời kỳ quá độ?", a: ["Tuân thủ tuyệt đối mọi mô hình của nước khác", "Phải giữ vững được độc lập dân tộc", "Phải đoàn kết, học tập kinh nghiệm từ thực tiễn", "Xây đi đôi với chống"], correct: 0, difficulty: 140 },
-                { q: "Biện pháp cơ bản nhất để xây dựng CNXH theo Hồ Chí Minh là gì?", a: ["Đem của dân, tài dân, sức dân làm lợi cho dân", "Nhà nước phải ban phát từ trên xuống", "Dựa hoàn toàn vào viện trợ quốc tế", "Phải tự lực cánh sinh là chính"], correct: 0, difficulty: 130 },
-                { q: "Để tận dụng thời cơ và thách thức, cần tập trung kiên định vấn đề nào?", a: ["Kiên định cách mạng", "Kiên định phương pháp", "Kiên định CN Mác - Lênin và TT Hồ Chí Minh", "Kiên định xây dựng đất nước"], correct: 2, difficulty: 120 },
-                { q: "Trong các luận điểm về cách mạng giải phóng dân tộc, luận điểm nào sau đây là SÁNG TẠO lớn của Bác?", a: ["Cách mạng giải phóng dân tộc đi theo con đường vô sản", "Phải do Đảng lãnh đạo", "Dựa trên liên minh công nông", "Có khả năng giành thắng lợi trước cách mạng ở chính quốc"], correct: 3, difficulty: 170 },
-                { q: "Theo Hồ Chí Minh, cách mạng xã hội chủ nghĩa phải tiến hành do ai lãnh đạo?", a: ["Giai cấp nông dân", "Giai cấp công nhân", "Tầng lớp trí thức", "Địa chủ yêu nước"], correct: 1, difficulty: 110 },
-                { q: "Giải phóng dân tộc theo TT HCM, xét về thực chất bao gồm nội dung nào?", a: ["Đánh đổ ách áp bức của đế quốc", "Giành độc lập, hình thành nhà nước độc lập", "Tự do chọn con đường phát triển phù hợp", "Tất cả các phương án"], correct: 3, difficulty: 130 },
-                { q: "Quan điểm nào thuộc về bản chất của CNXH trong tư tưởng Hồ Chí Minh?", a: ["Là chế độ không còn người bóc lột người", "Là chế độ còn một ít người bóc lột", "Là chế độ người bóc lột bị khinh rẻ", "Là chế độ người bóc lột được thừa nhận"], correct: 0, difficulty: 110 },
-                { q: "Theo Hồ Chí Minh, mục tiêu tổng quát của chủ nghĩa xã hội là gì?", a: ["Phát triển mạnh mẽ khoa học kĩ thuật", "Kinh tế tăng trưởng cao", "Đảm bảo quyền làm chủ của nhân dân", "Không ngừng cải thiện đời sống nhân dân lao động"], correct: 3, difficulty: 130 },
-                { q: "Nguyễn Ái Quốc tham gia thành lập Đảng Cộng sản Pháp khi nào?", a: ["12/1923", "12/1920", "12/1919", "12/1918"], correct: 1, difficulty: 100 },
-                { q: "Trong kháng chiến chống Mỹ, Bác Hồ đã tập làm gì để chuẩn bị vào thăm miền Nam?", a: ["Học tiếng Anh", "Tập bơi lội", "Tập bắn súng", "Tập hành quân như chiến sỹ bộ đội"], correct: 3, difficulty: 120 },
-                { q: "Nguyễn Ái Quốc tham dự Đại hội lần thứ nhất của Đảng Cộng sản Pháp vào năm nào?", a: ["1920", "1919", "1922", "1921"], correct: 3, difficulty: 150 },
-                { q: "Tính khoa học của nền văn hóa đối lập với vấn đề gì?", a: ["Tất cả vấn đề nêu dưới", "Quan niệm thần bí, mê tín", "Quan điểm duy tâm", "Phản tiến bộ"], correct: 0, difficulty: 120 },
-                { q: "Văn kiện đầu tiên thể hiện chế độ dân chủ do chủ tịch Hồ Chí Minh thiết kế?", a: ["Yêu sách 8 điểm", "Hiến pháp năm 1946", "Chương trình Việt Minh", "Tuyên ngôn độc lập"], correct: 1, difficulty: 140 },
-                { q: "Ai đã dạy Bác: 'Nước mất mà không biết là BẤT TRI, biết mà không chiến đấu là BẤT TRUNG'?", a: ["Nguyễn Sinh Sắc", "Hoàng Thông", "Lê Văn Miến", "Vương Thúc Quý"], correct: 2, difficulty: 160 },
-                { q: "Ai soạn thảo “Chánh cương văn tắt', 'Sách lược văn tắt' (1930)?", a: ["Nguyễn Ái Quốc", "Lê Hồng Phong", "Trần Phú", "Trịnh Đình Cửu"], correct: 0, difficulty: 100 },
-                { q: "Điều mong muốn cuối cùng của Hồ Chí Minh trong Di chúc là gì?", a: ["Dân giàu nước mạnh", "Xây dựng VN hòa bình, thống nhất, độc lập, dân chủ, giàu mạnh", "Hạnh phúc cho riêng mình", "Cách mạng toàn cầu"], correct: 1, difficulty: 110 },
-                { q: "Cách mạng giải phóng dân tộc muốn giành thắng lợi cần phải thế nào?", a: ["Dựa vào nước giàu", "Dựa vào nước thuộc địa khác", "Tiến hành chủ động và sáng tạo", "Chờ cách mạng chính quốc"], correct: 2, difficulty: 130 },
-                { q: "Trong quan niệm của Bác Hồ, CNXH là chế độ chính trị mà trong đó ai làm chủ?", a: ["Nhân dân lao động", "Trí thức", "Giai cấp nông dân", "Giai cấp công nhân"], correct: 0, difficulty: 110 },
-                { q: "Nguyễn Ái Quốc làm giảng viên ở trường đại học Phương Đông vào thời gian nào?", a: ["1938", "1937", "1934", "1939"], correct: 2, difficulty: 150 },
-                { q: "Tư tưởng đoàn kết cả những người từng chống đối nếu họ tán thành hòa bình phù hợp với phương châm nào?", a: ["Ác giả ác báo", "Nợ máu trả bằng máu", "Lấy nhu thắng cương", "Đánh kẻ chạy đi không đánh người chạy lại"], correct: 3, difficulty: 130 },
-                { q: "Tổ chức nào nhận định TT của Người là 'hiện thân khát vọng của các dân tộc'?", a: ["UNESCO", "ASEAN", "Liên hợp quốc", "Hội nhân quyền"], correct: 0, difficulty: 100 },
-                { q: "Đặc điểm cơ bản nhất của CNXH theo Hồ Chí Minh là gì?", a: ["Sở hữu nhà nước", "Công bằng tuyệt đối", "Nhân dân làm chủ", "Kinh tế phát triển"], correct: 2, difficulty: 120 },
-                { q: "Tác phẩm “Bản án chế độ thực dân Pháp” được viết năm nào?", a: ["1928", "1929", "1925", "1927"], correct: 2, difficulty: 130 },
-                { q: "Giá trị truyền thống nào thúc giục Bác ra đi tìm đường cứu nước?", a: ["Chủ nghĩa yêu nước", "Chủ nghĩa quốc tế", "Sự khoan dung", "Tính cần cù"], correct: 0, difficulty: 110 },
-                { q: "Nguyễn Ái Quốc đã tiếp xúc với nhóm “Tâm tâm xã” ở đâu?", a: ["Hồng Công", "Quảng Châu", "Thượng Hải", "Xiêm"], correct: 1, difficulty: 130 },
-                { q: "Đảng không có chủ nghĩa cũng như người không có trí khôn. Đó là chủ nghĩa nào?", a: ["Tam dân", "Dân tộc", "Quốc tế", "Mác-Lênin"], correct: 3, difficulty: 110 },
-                { q: "Định nghĩa nào KHÔNG PHẢI của Hồ Chí Minh về chữ 'Người'?", a: ["Nghĩa hẹp là gia đình, anh em", "Nghĩa rộng là đồng bào cả nước", "Là tổng hòa các mối quan hệ xã hội", "Rộng hơn nữa là cả loài người"], correct: 2, difficulty: 160 },
-                { q: "Hồ Chí Minh trình bày khái niệm văn hóa vào năm nào?", a: ["1944", "1942", "1943", "1941"], correct: 2, difficulty: 150 },
-                { q: "Đâu là chức năng của văn hóa theo tư tưởng Hồ Chí Minh?", a: ["Bồi dưỡng phẩm chất tốt đẹp cho con người", "Chỉ để giải trí", "Làm đẹp cho xã hội", "Phát triển kinh tế"], correct: 0, difficulty: 120 },
-                { q: "Mối quan hệ giữa văn hóa và các lĩnh vực khác theo Bác là gì?", a: ["Văn hóa nằm trong kinh tế, chính trị", "Văn hóa đứng ngoài chính trị", "Kinh tế quyết định văn hóa hoàn toàn", "Văn hóa chỉ là phụ trợ"], correct: 0, difficulty: 140 },
-                { q: "Văn hóa là tổng hợp mọi phương thức sinh hoạt... nhằm thích ứng nhu cầu gì?", a: ["Sự sinh tồn", "Sự hưởng thụ", "Sự thống trị", "Sự giao lưu"], correct: 0, difficulty: 150 },
-                { q: "Đâu là chuẩn mực đạo đức cách mạng hàng đầu trong TT HCM?", a: ["Trung với nước, hiếu với dân", "Cần kiệm liêm chính", "Yêu thương con người", "Tinh thần quốc tế"], correct: 0, difficulty: 100 },
-                { q: "Xây dựng con người toàn diện theo Bác cần quan tâm nội dung nào?", a: ["Vừa hồng vừa chuyên", "Vừa giỏi vừa giàu", "Vừa khỏe vừa đẹp", "Vừa cần vừa kiệm"], correct: 0, difficulty: 110 },
-                { q: "Chí công vô tư là nêu cao chủ nghĩa tập thể, trừ bỏ vấn đề gì?", a: ["Chủ nghĩa cá nhân", "Chủ nghĩa tư bản", "Lòng vị kỷ", "Tính lười biếng"], correct: 0, difficulty: 120 },
-                { q: "Khái niệm TT HCM Đại hội IX (2001) nêu lên KHÔNG bao gồm nội dung nào?", a: ["Bản chất", "Nguồn gốc", "Nội dung", "Kết cấu"], correct: 3, difficulty: 150 },
-                { q: "Trong nghiên cứu TT Hồ Chí Minh, cần quán triệt quan điểm nào?", a: ["Quan điểm bộ phận", "Quan điểm chỉnh thể", "Quan điểm tĩnh tại", "Quan điểm phiến diện"], correct: 1, difficulty: 160 },
-                { q: "Một trong những đặc điểm của Nhà nước pháp quyền theo Bác là gì?", a: ["Hiệp thương dân chủ", "Nhà nước hợp hiến, hợp pháp", "Sự ban phát từ trên", "Tính chuyên chế"], correct: 1, difficulty: 140 }
-            ];
+    <!-- Modal Câu hỏi -->
+    <div id="question-modal">
+        <div id="timer-bar"></div>
+        <div id="combo-status"></div>
+        <h3 id="q-text">Câu hỏi ở đây?</h3>
+        <div id="q-answers"></div>
+    </div>
 
-            let score = 0;
-            let isFishing = false;
-            let barDirection = 1;
-            let barPos = 0;
-            let barInterval;
-            let currentCombo = 0;
-            let comboTarget = 0;
-            let currentRoom = "";
-            let questionStartTime;
-            let currentQ;
+    <script>
+        // Ngân hàng 50 câu hỏi Tư tưởng Hồ Chí Minh cập nhật từ giáo trình
+        const questions = [
+            { q: "HỒ CHÍ MINH công tác tại viện nghiên cứu các vấn đề dân tộc và thuộc địa vào thời gian nào?", a: ["1923", "1932", "1934", "1936"], correct: 2, difficulty: 150 },
+            { q: "Tư tưởng, văn hóa phương tây lấy tiêu chuẩn nào làm thước đo?", a: ["Cảm tính và khoa học", "Lý tính và khoa học", "Tư duy và sự phản biện", "Sự phản biện và lý tính"], correct: 1, difficulty: 140 },
+            { q: "Mục đích chính để HỒ CHÍ MINH muốn ra nước ngoài năm 1911 là gì?", a: ["Xem họ làm thế nào để về giúp đồng bào", "Học cách làm giàu của phương Tây", "Tìm hiểu về nghệ thuật quân sự", "Đi du lịch vòng quanh thế giới"], correct: 0, difficulty: 100 },
+            { q: "Chọn phương án trả lời ĐÚNG NHẤT về nền tảng tư tưởng của Đảng:", a: ["Chủ nghĩa Mác - Lênin", "Tư tưởng Hồ Chí Minh", "Cùng với CN Mác-Lênin, TT Hồ Chí Minh là nền tảng, kim chỉ nam", "Chủ nghĩa Tam dân"], correct: 2, difficulty: 110 },
+            { q: "Theo Hồ Chí Minh, ưu điểm lớn nhất của chủ nghĩa Tam dân của Tôn Trung Sơn là gì?", a: ["Chống phong kiến", "Đấu tranh vì tự do, dân chủ", "Phù hợp với điều kiện thực tế nước ta", "Tự do, cơm áo, hòa bình"], correct: 2, difficulty: 130 },
+            { q: "Tư tưởng Hồ Chí Minh hình thành trên cơ sở nào?", a: ["Vận dụng và phát triển sáng tạo chủ nghĩa Mác- Lênin", "Tiếp thu toàn bộ chủ nghĩa Mác-Lênin", "Tiếp thu một bộ phận của chủ nghĩa Mác-Lênin", "Vận dụng hoàn toàn chủ nghĩa Mác - Lênin"], correct: 0, difficulty: 120 },
+            { q: "Tư tưởng Hồ Chí Minh về cách mạng Việt Nam được xem là gì?", a: ["Các quan điểm cụ thể", "Một nhóm các quan điểm", "Hệ thống các học thuyết", "Hệ thống các quan điểm toàn diện và sâu sắc"], correct: 3, difficulty: 130 },
+            { q: "Tìm phương án SAI về nội dung khái niệm TT HCM mà Đại hội IX nêu lên:", a: ["Bản chất cách mạng và khoa học", "Nguồn gốc tư tưởng, lý luận", "Nội dung tư tưởng", "Kết cấu tư tưởng"], correct: 3, difficulty: 150 },
+            { q: "Nguyên tắc nào cần quán triệt trong nghiên cứu TT Hồ Chí Minh?", a: ["Quan điểm kế thừa và phát triển", "Quan điểm kế thừa và toàn diện", "Quan điểm cách mạng và cụ thể", "Quan điểm cách mạng và nhân văn"], correct: 0, difficulty: 140 },
+            { q: "Nguyên tắc cơ bản trong nghiên cứu tư tướng Hồ Chí Minh là gì?", a: ["Thống nhất giữa lí luận và thực tiễn", "Thống nhất giữa tính đảng và tính thực tiễn", "Thống nhất giữa tính khoa học và lý luận", "Tất cả các phương án trên"], correct: 0, difficulty: 110 },
+            { q: "Hồ Chí Minh cho rằng giai cấp địa chủ ở Việt Nam như thế nào?", a: ["Là giai cấp phản động", "Là giai cấp tiên tiến", "Có thể phân hóa và lợi dụng một bộ phận", "Cần phải loại bỏ hoàn toàn lập tức"], correct: 2, difficulty: 160 },
+            { q: "Câu nói “Sông có thế cạn, núi có thể mòn, song chân lý đó không bao giờ thay đổi” ở tác phẩm nào?", a: ["Thư gửi đồng bào Nam Bộ (1946)", "Nam kỳ tự trị", "Bức thư gửi đồng chí Lê Duẩn", "Thành đồng tổ quốc"], correct: 0, difficulty: 120 },
+            { q: "Nội dung nào KHÔNG PHẢI là thực chất vấn đề dân tộc thuộc địa trong TT HCM?", a: ["Đấu tranh chống chủ nghĩa thực dân", "Lựa chọn con đường CNXH", "Đòi quyền tự do dân chủ tối thiểu", "Phụ thuộc vào sự giúp đỡ bên ngoài"], correct: 3, difficulty: 150 },
+            { q: "Đâu KHÔNG PHẢI là nguyên tắc xây dựng CNXH trong thời kỳ quá độ?", a: ["Tuân thủ tuyệt đối mọi mô hình của nước khác", "Phải giữ vững được độc lập dân tộc", "Phải đoàn kết, học tập kinh nghiệm từ thực tiễn", "Xây đi đôi với chống"], correct: 0, difficulty: 140 },
+            { q: "Biện pháp cơ bản nhất để xây dựng CNXH theo Hồ Chí Minh là gì?", a: ["Đem của dân, tài dân, sức dân làm lợi cho dân", "Nhà nước phải ban phát từ trên xuống", "Dựa hoàn toàn vào viện trợ quốc tế", "Phải tự lực cánh sinh là chính"], correct: 0, difficulty: 130 },
+            { q: "Để tận dụng thời cơ và thách thức, cần tập trung kiên định vấn đề nào?", a: ["Kiên định cách mạng", "Kiên định phương pháp", "Kiên định CN Mác - Lênin và TT Hồ Chí Minh", "Kiên định xây dựng đất nước"], correct: 2, difficulty: 120 },
+            { q: "Trong các luận điểm về cách mạng giải phóng dân tộc, luận điểm nào sau đây là SÁNG TẠO lớn của Bác?", a: ["Cách mạng giải phóng dân tộc đi theo con đường vô sản", "Phải do Đảng lãnh đạo", "Dựa trên liên minh công nông", "Có khả năng giành thắng lợi trước cách mạng ở chính quốc"], correct: 3, difficulty: 170 },
+            { q: "Theo Hồ Chí Minh, cách mạng xã hội chủ nghĩa phải tiến hành do ai lãnh đạo?", a: ["Giai cấp nông dân", "Giai cấp công nhân", "Tầng lớp trí thức", "Địa chủ yêu nước"], correct: 1, difficulty: 110 },
+            { q: "Giải phóng dân tộc theo TT HCM, xét về thực chất bao gồm nội dung nào?", a: ["Đánh đổ ách áp bức của đế quốc", "Giành độc lập, hình thành nhà nước độc lập", "Tự do chọn con đường phát triển phù hợp", "Tất cả các phương án"], correct: 3, difficulty: 130 },
+            { q: "Quan điểm nào thuộc về bản chất của CNXH trong tư tưởng Hồ Chí Minh?", a: ["Là chế độ không còn người bóc lột người", "Là chế độ còn một ít người bóc lột", "Là chế độ người bóc lột bị khinh rẻ", "Là chế độ người bóc lột được thừa nhận"], correct: 0, difficulty: 110 },
+            { q: "Theo Hồ Chí Minh, mục tiêu tổng quát của chủ nghĩa xã hội là gì?", a: ["Phát triển mạnh mẽ khoa học kĩ thuật", "Kinh tế tăng trưởng cao", "Đảm bảo quyền làm chủ của nhân dân", "Không ngừng cải thiện đời sống nhân dân lao động"], correct: 3, difficulty: 130 },
+            { q: "Nguyễn Ái Quốc tham gia thành lập Đảng Cộng sản Pháp khi nào?", a: ["12/1923", "12/1920", "12/1919", "12/1918"], correct: 1, difficulty: 100 },
+            { q: "Trong kháng chiến chống Mỹ, Bác Hồ đã tập làm gì để chuẩn bị vào thăm miền Nam?", a: ["Học tiếng Anh", "Tập bơi lội", "Tập bắn súng", "Tập hành quân như chiến sỹ bộ đội"], correct: 3, difficulty: 120 },
+            { q: "Nguyễn Ái Quốc tham dự Đại hội lần thứ nhất của Đảng Cộng sản Pháp vào năm nào?", a: ["1920", "1919", "1922", "1921"], correct: 3, difficulty: 150 },
+            { q: "Tính khoa học của nền văn hóa đối lập với vấn đề gì?", a: ["Tất cả vấn đề nêu dưới", "Quan niệm thần bí, mê tín", "Quan điểm duy tâm", "Phản tiến bộ"], correct: 0, difficulty: 120 },
+            { q: "Văn kiện đầu tiên thể hiện chế độ dân chủ do chủ tịch Hồ Chí Minh thiết kế?", a: ["Yêu sách 8 điểm", "Hiến pháp năm 1946", "Chương trình Việt Minh", "Tuyên ngôn độc lập"], correct: 1, difficulty: 140 },
+            { q: "Ai đã dạy Bác: 'Nước mất mà không biết là BẤT TRI, biết mà không chiến đấu là BẤT TRUNG'?", a: ["Nguyễn Sinh Sắc", "Hoàng Thông", "Lê Văn Miến", "Vương Thúc Quý"], correct: 2, difficulty: 160 },
+            { q: "Ai soạn thảo “Chánh cương văn tắt', 'Sách lược văn tắt' (1930)?", a: ["Nguyễn Ái Quốc", "Lê Hồng Phong", "Trần Phú", "Trịnh Đình Cửu"], correct: 0, difficulty: 100 },
+            { q: "Điều mong muốn cuối cùng của Hồ Chí Minh trong Di chúc là gì?", a: ["Dân giàu nước mạnh", "Xây dựng VN hòa bình, thống nhất, độc lập, dân chủ, giàu mạnh", "Hạnh phúc cho riêng mình", "Cách mạng toàn cầu"], correct: 1, difficulty: 110 },
+            { q: "Cách mạng giải phóng dân tộc muốn giành thắng lợi cần phải thế nào?", a: ["Dựa vào nước giàu", "Dựa vào nước thuộc địa khác", "Tiến hành chủ động và sáng tạo", "Chờ cách mạng chính quốc"], correct: 2, difficulty: 130 },
+            { q: "Trong quan niệm của Bác Hồ, CNXH là chế độ chính trị mà trong đó ai làm chủ?", a: ["Nhân dân lao động", "Trí thức", "Giai cấp nông dân", "Giai cấp công nhân"], correct: 0, difficulty: 110 },
+            { q: "Nguyễn Ái Quốc làm giảng viên ở trường đại học Phương Đông vào thời gian nào?", a: ["1938", "1937", "1934", "1939"], correct: 2, difficulty: 150 },
+            { q: "Tư tưởng đoàn kết cả những người từng chống đối nếu họ tán thành hòa bình phù hợp với phương châm nào?", a: ["Ác giả ác báo", "Nợ máu trả bằng máu", "Lấy nhu thắng cương", "Đánh kẻ chạy đi không đánh người chạy lại"], correct: 3, difficulty: 130 },
+            { q: "Tổ chức nào nhận định TT của Người là 'hiện thân khát vọng của các dân tộc'?", a: ["UNESCO", "ASEAN", "Liên hợp quốc", "Hội nhân quyền"], correct: 0, difficulty: 100 },
+            { q: "Đặc điểm cơ bản nhất của CNXH theo Hồ Chí Minh là gì?", a: ["Sở hữu nhà nước", "Công bằng tuyệt đối", "Nhân dân làm chủ", "Kinh tế phát triển"], correct: 2, difficulty: 120 },
+            { q: "Tác phẩm “Bản án chế độ thực dân Pháp” được viết năm nào?", a: ["1928", "1929", "1925", "1927"], correct: 2, difficulty: 130 },
+            { q: "Giá trị truyền thống nào thúc giục Bác ra đi tìm đường cứu nước?", a: ["Chủ nghĩa yêu nước", "Chủ nghĩa quốc tế", "Sự khoan dung", "Tính cần cù"], correct: 0, difficulty: 110 },
+            { q: "Nguyễn Ái Quốc đã tiếp xúc với nhóm “Tâm tâm xã” ở đâu?", a: ["Hồng Công", "Quảng Châu", "Thượng Hải", "Xiêm"], correct: 1, difficulty: 130 },
+            { q: "Đảng không có chủ nghĩa cũng như người không có trí khôn. Đó là chủ nghĩa nào?", a: ["Tam dân", "Dân tộc", "Quốc tế", "Mác-Lênin"], correct: 3, difficulty: 110 },
+            { q: "Định nghĩa nào KHÔNG PHẢI của Hồ Chí Minh về chữ 'Người'?", a: ["Nghĩa hẹp là gia đình, anh em", "Nghĩa rộng là đồng bào cả nước", "Là tổng hòa các mối quan hệ xã hội", "Rộng hơn nữa là cả loài người"], correct: 2, difficulty: 160 },
+            { q: "Hồ Chí Minh trình bày khái niệm văn hóa vào năm nào?", a: ["1944", "1942", "1943", "1941"], correct: 2, difficulty: 150 },
+            { q: "Đâu là chức năng của văn hóa theo tư tưởng Hồ Chí Minh?", a: ["Bồi dưỡng phẩm chất tốt đẹp cho con người", "Chỉ để giải trí", "Làm đẹp cho xã hội", "Phát triển kinh tế"], correct: 0, difficulty: 120 },
+            { q: "Mối quan hệ giữa văn hóa và các lĩnh vực khác theo Bác là gì?", a: ["Văn hóa nằm trong kinh tế, chính trị", "Văn hóa đứng ngoài chính trị", "Kinh tế quyết định văn hóa hoàn toàn", "Văn hóa chỉ là phụ trợ"], correct: 0, difficulty: 140 },
+            { q: "Văn hóa là tổng hợp mọi phương thức sinh hoạt... nhằm thích ứng nhu cầu gì?", a: ["Sự sinh tồn", "Sự hưởng thụ", "Sự thống trị", "Sự giao lưu"], correct: 0, difficulty: 150 },
+            { q: "Đâu là chuẩn mực đạo đức cách mạng hàng đầu trong TT HCM?", a: ["Trung với nước, hiếu với dân", "Cần kiệm liêm chính", "Yêu thương con người", "Tinh thần quốc tế"], correct: 0, difficulty: 100 },
+            { q: "Xây dựng con người toàn diện theo Bác cần quan tâm nội dung nào?", a: ["Vừa hồng vừa chuyên", "Vừa giỏi vừa giàu", "Vừa khỏe vừa đẹp", "Vừa cần vừa kiệm"], correct: 0, difficulty: 110 },
+            { q: "Chí công vô tư là nêu cao chủ nghĩa tập thể, trừ bỏ vấn đề gì?", a: ["Chủ nghĩa cá nhân", "Chủ nghĩa tư bản", "Lòng vị kỷ", "Tính lười biếng"], correct: 0, difficulty: 120 },
+            { q: "Khái niệm TT HCM Đại hội IX (2001) nêu lên KHÔNG bao gồm nội dung nào?", a: ["Bản chất", "Nguồn gốc", "Nội dung", "Kết cấu"], correct: 3, difficulty: 150 },
+            { q: "Trong nghiên cứu TT Hồ Chí Minh, cần quán triệt quan điểm nào?", a: ["Quan điểm bộ phận", "Quan điểm chỉnh thể", "Quan điểm tĩnh tại", "Quan điểm phiến diện"], correct: 1, difficulty: 160 },
+            { q: "Một trong những đặc điểm của Nhà nước pháp quyền theo Bác là gì?", a: ["Hiệp thương dân chủ", "Nhà nước hợp hiến, hợp pháp", "Sự ban phát từ trên", "Tính chuyên chế"], correct: 1, difficulty: 140 }
+        ];
 
-            const socket = io(); // Kết nối tới server
+        let score = 0;
+        let isFishing = false;
+        let barDirection = 1;
+        let barPos = 0;
+        let barInterval;
+        let currentCombo = 0;
+        let comboTarget = 0;
+        let currentRoom = "";
+        let questionStartTime;
+        let currentQ;
 
-            function showScreen(id) {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                const target = document.getElementById(id);
-                if (target) target.classList.add('active');
-            }
+        const socket = io(); // Kết nối tới server
 
-            // Sửa lỗi đặt tên hàm từ joinRoom thành startGame để khớp với HTML
-            function startGame() {
-                const playerName = document.getElementById('player-name').value;
-                const roomCode = document.getElementById('room-code').value;
-                if (!playerName || !roomCode) return alert("Nhập đủ tên và mã!");
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(id);
+            if (target) target.classList.add('active');
+        }
 
-                socket.emit('joinRoom', { roomCode, playerName });
-                document.getElementById('display-name').innerText = playerName;
-            }
+        // Sửa lỗi đặt tên hàm từ joinRoom thành startGame để khớp với HTML
+        function startGame() {
+            const playerName = document.getElementById('player-name').value;
+            const roomCode = document.getElementById('room-code').value;
+            if (!playerName || !roomCode) return alert("Nhập đủ tên và mã!");
 
-            socket.on('joinSuccess', (data) => {
-                currentRoom = data.roomCode;
+            socket.emit('joinRoom', { roomCode, playerName });
+            document.getElementById('display-name').innerText = playerName;
+        }
 
-                // RESET ĐIỂM VỀ 0 KHI VÀO PHÒNG MỚI
-                score = 0;
-                document.getElementById('score').innerText = "0";
+        socket.on('joinSuccess', (data) => {
+            currentRoom = data.roomCode;
 
-                document.getElementById('waiting-room-code').innerText = currentRoom;
+            // RESET ĐIỂM VỀ 0 KHI VÀO PHÒNG MỚI
+            score = 0;
+            document.getElementById('score').innerText = "0";
 
-                if (data.status === 'playing') {
-                    showScreen('screen-game');
-                    document.getElementById('btn-cast').style.display = 'block';
-                } else {
-                    showScreen('screen-waiting-player');
-                }
-            });
+            document.getElementById('waiting-room-code').innerText = currentRoom;
 
-            socket.on('updatePlayerList', (players) => {
-                const listDiv = document.getElementById('waiting-player-list');
-                // Hiển thị danh sách dấu chấm đầu dòng cho chuyên nghiệp
-                listDiv.innerHTML = players.map(p => `• <b>${p.name}</b> <span style="font-size:12px; color:var(--green)">- Đã sẵn sàng</span>`).join('<br>');
-            });
-
-            socket.on('gameStarted', () => {
-                document.getElementById('msg').innerText = "TRẬN ĐẤU BẮT ĐẦU! QUĂNG CẦN THÔI!";
-                showScreen('screen-game'); // Chuyển từ màn hình chờ sang màn hình hồ câu
+            if (data.status === 'playing') {
+                showScreen('screen-game');
                 document.getElementById('btn-cast').style.display = 'block';
-            });
+            } else {
+                showScreen('screen-waiting-player');
+            }
+        });
 
-            // Lắng nghe lệnh kết thúc từ server
-            socket.on('gameEnded', () => {
+        socket.on('updatePlayerList', (players) => {
+            const listDiv = document.getElementById('waiting-player-list');
+            // Hiển thị danh sách dấu chấm đầu dòng cho chuyên nghiệp
+            listDiv.innerHTML = players.map(p => `• <b>${p.name}</b> <span style="font-size:12px; color:var(--green)">- Đã sẵn sàng</span>`).join('<br>');
+        });
+
+        socket.on('gameStarted', () => {
+            document.getElementById('msg').innerText = "TRẬN ĐẤU BẮT ĐẦU! QUĂNG CẦN THÔI!";
+            showScreen('screen-game'); // Chuyển từ màn hình chờ sang màn hình hồ câu
+            document.getElementById('btn-cast').style.display = 'block';
+        });
+
+        // Lắng nghe lệnh kết thúc từ server
+        socket.on('gameEnded', () => {
 
 
-                isFishing = false;
-                clearInterval(barInterval);
+            isFishing = false;
+            clearInterval(barInterval);
+            stopFishAnimation();
+
+            document.getElementById('question-modal').style.display = 'none';
+            document.getElementById('bar-container').style.display = 'none';
+
+            // Chuyển màn hình
+            showScreen('screen-game-over');
+
+            // Cập nhật bảng điểm cuối cùng
+            const currentRankings = document.getElementById('rankings').innerHTML;
+            document.getElementById('final-rankings').innerHTML = currentRankings;
+        });
+
+        socket.on('errorMsg', (msg) => alert(msg));
+
+        function startFishAnimation() {
+            const pond = document.getElementById('pond');
+            const fishTypes = ['🐟', '🐠', '🐡', '🐬'];
+
+            fishInterval = setInterval(() => {
+                const fish = document.createElement('div');
+                fish.className = 'fish-anim';
+                fish.innerText = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+
+                // Vị trí độ cao ngẫu nhiên
+                const topPos = 20 + Math.random() * 60;
+                fish.style.top = topPos + "%";
+
+                // Hướng bơi ngẫu nhiên
+                const side = Math.random() > 0.5 ? 'Right' : 'Left';
+                const duration = 3 + Math.random() * 4; // Tốc độ bơi 3-7 giây
+
+                fish.style.animation = `swim${side} ${duration}s linear forwards`;
+
+                pond.appendChild(fish);
+
+                // Tự xóa cá sau khi bơi xong để tránh nặng máy
+                setTimeout(() => { fish.remove(); }, duration * 1000);
+            }, 600); // Cứ 0.6 giây tạo 1 con cá mới
+        }
+
+        // Hàm xóa sạch cá khi bắt đầu vào pha căn lực hoặc reset
+        function stopFishAnimation() {
+            clearInterval(fishInterval);
+            // Xóa các con cá đang bơi dở để người chơi tập trung vào thanh lực
+            const floatingFish = document.querySelectorAll('.fish-anim');
+            floatingFish.forEach(f => f.style.opacity = "0");
+            setTimeout(() => {
+                floatingFish.forEach(f => f.remove());
+            }, 500);
+        }
+
+        function castRod() {
+            if (isFishing) return;
+            isFishing = true;
+
+            const rod = document.getElementById('rod');
+            const line = document.getElementById('fishing-line');
+            const btn = document.getElementById('btn-cast');
+
+            btn.style.display = 'none';
+            rod.classList.add('rod-cast');
+
+            setTimeout(() => {
+                line.classList.add('bobbing');
+                document.getElementById('msg').innerText = "Đang chờ cá cắn...";
+                startFishAnimation();
+            }, 600);
+
+            setTimeout(() => {
                 stopFishAnimation();
+                line.classList.remove('bobbing');
 
-                document.getElementById('question-modal').style.display = 'none';
-                document.getElementById('bar-container').style.display = 'none';
+                // GIẬT CẦN: Chỉ hơi chúi xuống một chút (-45 độ)
+                rod.style.transform = "rotate(-45deg)";
+                setTimeout(() => { rod.style.transform = "rotate(-40deg)"; }, 150);
 
-                // Chuyển màn hình
-                showScreen('screen-game-over');
+                startTensionBar();
+            }, 3000 + Math.random() * 3000);
+        }
 
-                // Cập nhật bảng điểm cuối cùng
-                const currentRankings = document.getElementById('rankings').innerHTML;
-                document.getElementById('final-rankings').innerHTML = currentRankings;
-            });
+        function startTensionBar() {
+            document.getElementById('msg').innerText = "CÁ CẮN! NHẤN ĐÚNG VẠCH XANH!";
+            document.getElementById('bar-container').style.display = 'block';
+            barPos = 0;
+            barInterval = setInterval(() => {
+                barPos += 2 * barDirection;
+                if (barPos > 95 || barPos < 0) barDirection *= -1;
+                document.getElementById('indicator').style.left = barPos + '%';
+            }, 20);
 
-            socket.on('errorMsg', (msg) => alert(msg));
+            window.onclick = function (e) {
+                if (e.target.id === 'btn-cast' || e.target.classList.contains('answer-btn')) return;
+                checkCatch();
+            };
+        }
 
-            function startFishAnimation() {
-                const pond = document.getElementById('pond');
-                const fishTypes = ['🐟', '🐠', '🐡', '🐬'];
+        function checkCatch() {
+            clearInterval(barInterval);
+            document.getElementById('bar-container').style.display = 'none';
+            window.onclick = null;
 
-                fishInterval = setInterval(() => {
-                    const fish = document.createElement('div');
-                    fish.className = 'fish-anim';
-                    fish.innerText = fishTypes[Math.floor(Math.random() * fishTypes.length)];
-
-                    // Vị trí độ cao ngẫu nhiên
-                    const topPos = 20 + Math.random() * 60;
-                    fish.style.top = topPos + "%";
-
-                    // Hướng bơi ngẫu nhiên
-                    const side = Math.random() > 0.5 ? 'Right' : 'Left';
-                    const duration = 3 + Math.random() * 4; // Tốc độ bơi 3-7 giây
-
-                    fish.style.animation = `swim${side} ${duration}s linear forwards`;
-
-                    pond.appendChild(fish);
-
-                    // Tự xóa cá sau khi bơi xong để tránh nặng máy
-                    setTimeout(() => { fish.remove(); }, duration * 1000);
-                }, 600); // Cứ 0.6 giây tạo 1 con cá mới
-            }
-
-            // Hàm xóa sạch cá khi bắt đầu vào pha căn lực hoặc reset
-            function stopFishAnimation() {
-                clearInterval(fishInterval);
-                // Xóa các con cá đang bơi dở để người chơi tập trung vào thanh lực
-                const floatingFish = document.querySelectorAll('.fish-anim');
-                floatingFish.forEach(f => f.style.opacity = "0");
-                setTimeout(() => {
-                    floatingFish.forEach(f => f.remove());
-                }, 500);
-            }
-
-            function castRod() {
-                if (isFishing) return;
-                isFishing = true;
-
-                const rod = document.getElementById('rod');
-                const line = document.getElementById('fishing-line');
-                const hook = document.getElementById('hook');
-                const btn = document.getElementById('btn-cast');
-
-                // 1. Hiệu ứng quăng cần
-                btn.style.display = 'none';
-                rod.classList.add('rod-cast');
-
-                setTimeout(() => {
-                    line.classList.add('line-extended');
-                    hook.classList.add('hook-visible');
-                    line.classList.add('bobbing'); // Phao nhấp nhô trên nước
-                    document.getElementById('msg').innerText = "Đang đợi cá cắn câu...";
-                    startFishAnimation();
-                }, 300);
-
-                // 2. Chờ cá cắn câu
-                setTimeout(() => {
-                    stopFishAnimation();
-                    // Hiệu ứng giật cần nhẹ khi cá cắn
-                    line.classList.remove('bobbing');
-                    rod.style.transform = "rotate(-65deg)";
-                    setTimeout(() => { rod.style.transform = "rotate(-60deg)"; }, 100);
-
-                    startTensionBar();
-                }, 3000 + Math.random() * 3000);
-            }
-
-            function startTensionBar() {
-                document.getElementById('msg').innerText = "CÁ CẮN! NHẤN ĐÚNG VẠCH XANH!";
-                document.getElementById('bar-container').style.display = 'block';
-                barPos = 0;
-                barInterval = setInterval(() => {
-                    barPos += 2 * barDirection;
-                    if (barPos > 95 || barPos < 0) barDirection *= -1;
-                    document.getElementById('indicator').style.left = barPos + '%';
-                }, 20);
-
-                window.onclick = function (e) {
-                    if (e.target.id === 'btn-cast' || e.target.classList.contains('answer-btn')) return;
-                    checkCatch();
-                };
-            }
-
-            function checkCatch() {
-                clearInterval(barInterval);
-                document.getElementById('bar-container').style.display = 'none';
-                window.onclick = null;
-
-                if (barPos >= 42.5 && barPos <= 57.5) {
-                    triggerQuestion(1.5);
-                } else if (barPos >= 30 && barPos <= 70) {
-                    triggerQuestion(1.0);
-                } else {
-                    document.getElementById('msg').innerText = "Hụt rồi! Thử lại nhé.";
-                    resetGame();
-                }
-            }
-
-            function triggerQuestion(multiplier) {
-                if (currentCombo === 0 && Math.random() < 0.2) {
-                    comboTarget = 3;
-                    document.getElementById('combo-status').innerHTML = "<span class='combo-badge'>🚨 ĐÀN CÁ XUẤT HIỆN! (X3 CÂU)</span>";
-                }
-
-                currentQ = questions[Math.floor(Math.random() * questions.length)];
-                document.getElementById('q-text').innerText = currentQ.q;
-                const answersDiv = document.getElementById('q-answers');
-                answersDiv.innerHTML = '';
-
-                currentQ.a.forEach((ans, idx) => {
-                    const btn = document.createElement('button');
-                    btn.className = 'answer-btn';
-                    btn.innerText = ans;
-                    btn.onclick = () => submitAnswer(idx, multiplier);
-                    answersDiv.appendChild(btn);
-                });
-
-                document.getElementById('question-modal').style.display = 'block';
-                questionStartTime = Date.now();
-
-                const timerBar = document.getElementById('timer-bar');
-                timerBar.style.transition = 'none';
-                timerBar.style.width = '100%';
-                setTimeout(() => {
-                    timerBar.style.transition = '15s linear';
-                    timerBar.style.width = '0%';
-                }, 50);
-            }
-
-            function submitAnswer(idx, multiplier) {
-                document.getElementById('question-modal').style.display = 'none';
-                const timeTaken = (Date.now() - questionStartTime) / 1000;
-
-                if (idx === currentQ.correct) {
-                    let timeBonus = Math.max(0, (15 - timeTaken) / 15);
-                    let pointsEarned = Math.round(currentQ.difficulty * timeBonus * multiplier);
-
-                    score += pointsEarned;
-                    document.getElementById('score').innerText = score;
-                    document.getElementById('msg').innerText = `+${pointsEarned} điểm!`;
-
-                    // QUAN TRỌNG: Gửi điểm lên server cho Multiplayer
-                    socket.emit('submitScore', { roomCode: currentRoom, points: pointsEarned });
-
-                    if (comboTarget > 0) {
-                        currentCombo++;
-                        if (currentCombo < comboTarget) {
-                            setTimeout(() => triggerQuestion(multiplier), 800);
-                            return;
-                        } else {
-                            socket.emit('submitScore', { roomCode: currentRoom, points: 500 });
-                            score += 500;
-                            document.getElementById('score').innerText = score;
-                            document.getElementById('msg').innerText = "COMBO HOÀN THÀNH! +500đ";
-                            currentCombo = 0; comboTarget = 0;
-                            document.getElementById('combo-status').innerHTML = "";
-                        }
-                    }
-                } else {
-                    document.getElementById('msg').innerText = "Sai rồi! Cá chạy mất.";
-                    currentCombo = 0; comboTarget = 0;
-                    document.getElementById('combo-status').innerHTML = "";
-                }
+            if (barPos >= 42.5 && barPos <= 57.5) {
+                triggerQuestion(1.5);
+            } else if (barPos >= 30 && barPos <= 70) {
+                triggerQuestion(1.0);
+            } else {
+                document.getElementById('msg').innerText = "Hụt rồi! Thử lại nhé.";
                 resetGame();
             }
+        }
 
-            function resetGame() {
-                isFishing = false;
-                stopFishAnimation();
+        function triggerQuestion(multiplier) {
+            if (currentCombo === 0 && Math.random() < 0.2) {
+                comboTarget = 3;
+                document.getElementById('combo-status').innerHTML = "<span class='combo-badge'>🚨 ĐÀN CÁ XUẤT HIỆN! (X3 CÂU)</span>";
+            }
 
-                const rod = document.getElementById('rod');
-                const line = document.getElementById('fishing-line');
+            currentQ = questions[Math.floor(Math.random() * questions.length)];
+            document.getElementById('q-text').innerText = currentQ.q;
+            const answersDiv = document.getElementById('q-answers');
+            answersDiv.innerHTML = '';
 
-                // Xóa bỏ class và style để cần câu quay về tư thế chờ
-                rod.classList.remove('rod-cast');
-                line.classList.remove('bobbing');
-                rod.style.transform = ""; // Quan trọng: xóa rotate tạm thời lúc cá cắn
+            currentQ.a.forEach((ans, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.innerText = ans;
+                btn.onclick = () => submitAnswer(idx, multiplier);
+                answersDiv.appendChild(btn);
+            });
 
-                document.getElementById('btn-cast').style.display = 'block';
+            document.getElementById('question-modal').style.display = 'block';
+            questionStartTime = Date.now();
+
+            const timerBar = document.getElementById('timer-bar');
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            setTimeout(() => {
+                timerBar.style.transition = '15s linear';
+                timerBar.style.width = '0%';
+            }, 50);
+        }
+
+        function submitAnswer(idx, multiplier) {
+            document.getElementById('question-modal').style.display = 'none';
+            const timeTaken = (Date.now() - questionStartTime) / 1000;
+
+            if (idx === currentQ.correct) {
+                let timeBonus = Math.max(0, (15 - timeTaken) / 15);
+                let pointsEarned = Math.round(currentQ.difficulty * timeBonus * multiplier);
+
+                score += pointsEarned;
+                document.getElementById('score').innerText = score;
+                document.getElementById('msg').innerText = `+${pointsEarned} điểm!`;
+
+                // QUAN TRỌNG: Gửi điểm lên server cho Multiplayer
+                socket.emit('submitScore', { roomCode: currentRoom, points: pointsEarned });
+
+                if (comboTarget > 0) {
+                    currentCombo++;
+                    if (currentCombo < comboTarget) {
+                        setTimeout(() => triggerQuestion(multiplier), 800);
+                        return;
+                    } else {
+                        socket.emit('submitScore', { roomCode: currentRoom, points: 500 });
+                        score += 500;
+                        document.getElementById('score').innerText = score;
+                        document.getElementById('msg').innerText = "COMBO HOÀN THÀNH! +500đ";
+                        currentCombo = 0; comboTarget = 0;
+                        document.getElementById('combo-status').innerHTML = "";
+                    }
+                }
+            } else {
+                document.getElementById('msg').innerText = "Sai rồi! Cá chạy mất.";
+                currentCombo = 0; comboTarget = 0;
                 document.getElementById('combo-status').innerHTML = "";
             }
-            // Lắng nghe bảng xếp hạng thật từ Server
-            socket.on('updateLeaderboard', (leaderboard) => {
-                const rankDiv = document.getElementById('rankings');
-                rankDiv.innerHTML = leaderboard.map((p, i) => `${i + 1}. ${p.name}: ${p.score}đ`).join('<br>');
-            });
-        </script>
-    </body>
+            resetGame();
+        }
 
-    </html>
+        function resetGame() {
+            isFishing = false;
+            stopFishAnimation();
+
+            const rod = document.getElementById('rod');
+            const line = document.getElementById('fishing-line');
+
+            // Xóa bỏ class và style để cần câu quay về tư thế chờ
+            rod.classList.remove('rod-cast');
+            line.classList.remove('bobbing');
+            rod.style.transform = ""; // Quan trọng: xóa rotate tạm thời lúc cá cắn
+
+            document.getElementById('btn-cast').style.display = 'block';
+            document.getElementById('combo-status').innerHTML = "";
+        }
+        // Lắng nghe bảng xếp hạng thật từ Server
+        socket.on('updateLeaderboard', (leaderboard) => {
+            const rankDiv = document.getElementById('rankings');
+            rankDiv.innerHTML = leaderboard.map((p, i) => `${i + 1}. ${p.name}: ${p.score}đ`).join('<br>');
+        });
+    </script>
+</body>
+
+</html>
